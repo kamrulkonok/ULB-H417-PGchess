@@ -1,5 +1,14 @@
+.vscode/
+data/
+# all files prefixed with test
+test*
+
+
 # Prerequisites
 *.d
+
+# bison files
+*.bc
 
 # Object files
 *.o
