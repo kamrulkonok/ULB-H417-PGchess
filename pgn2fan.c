@@ -1,7 +1,6 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
-#include <ctype.h>
 #include "smallchesslib.h"
 
 // Function to remove newlines from a string
@@ -49,11 +48,11 @@ void convertPGNtoCSV(const char *inputFilePath, const char *outputFilePath)
     FILE *inputFile = fopen(inputFilePath, "r");
     FILE *outputFile = fopen(outputFilePath, "w");
 
-    if (!inputFile) {
-        printf("Failed to open input file: %s\n", inputFilePath);
+    if (!inputFile || !outputFile)
+    {
+        // Handle file open error
         return;
     }
-    // ... rest of your function ...
 
     fprintf(outputFile, "SAN,FEN\n"); // Write CSV header
 
@@ -107,6 +106,6 @@ void convertPGNtoCSV(const char *inputFilePath, const char *outputFilePath)
 
 int main()
 {
-    convertPGNtoCSV("/mnt/e/Study/BDMA/ULB/Database Systems Architecture/Chess Game Extension/pgnment/Pgndemo.pgn", "Pgndemo.csv");
+    convertPGNtoCSV("Pgndemo.pgn", "Pgndemo.csv");
     return 0;
 }

@@ -13,7 +13,7 @@
   version: 0.8d
 
   Default notation format for this library is a coordinate one, i.e.
-  
+
     squarefrom squareto [promotedpiece]
 
   e.g.: e2e4 or A2A1q
@@ -40,7 +40,7 @@
 
 #ifndef SCL_DEBUG_AI
 /** AI will print out a Newick-like tree of searched moves. */
-  #define SCL_DEBUG_AI 0
+#define SCL_DEBUG_AI 0
 #endif
 
 /**
@@ -53,19 +53,19 @@
 typedef uint8_t (*SCL_RandomFunction)(void);
 
 #if SCL_COUNT_EVALUATED_POSITIONS
-  uint32_t SCL_positionsEvaluated = 0; /**< If enabled by 
-                                            SCL_COUNT_EVALUATED_POSITIONS, this
-                                            will increment with every
-                                            dynamically evaluated position (e.g.
-                                            when AI computes its move). */
+uint32_t SCL_positionsEvaluated = 0; /**< If enabled by
+                                          SCL_COUNT_EVALUATED_POSITIONS, this
+                                          will increment with every
+                                          dynamically evaluated position (e.g.
+                                          when AI computes its move). */
 #endif
 
 #ifndef SCL_CALL_WDT_RESET
-  #define SCL_CALL_WDT_RESET 0 /**< Option that should be enabled on some
-                                    Arduinos. If 1, call to watchdog timer
-                                    reset will be performed during dynamic
-                                    evaluation (without it if AI takes long the
-                                    program will reset). */
+#define SCL_CALL_WDT_RESET 0 /**< Option that should be enabled on some       \
+                                  Arduinos. If 1, call to watchdog timer      \
+                                  reset will be performed during dynamic      \
+                                  evaluation (without it if AI takes long the \
+                                  program will reset). */
 #endif
 
 /**
@@ -83,32 +83,32 @@ uint8_t SCL_randomBetter(void);
 void SCL_randomBetterSeed(uint16_t seed);
 
 #ifndef SCL_EVALUATION_FUNCTION
-  /**
-    If defined, AI will always use the static evaluation function with this
-    name. This helps avoid pointers to functions and can be faster but the
-    function can't be changed at runtime.
-  */
-  #define SCL_EVALUATION_FUNCTION
-  #undef SCL_EVALUATION_FUNCTION
+/**
+  If defined, AI will always use the static evaluation function with this
+  name. This helps avoid pointers to functions and can be faster but the
+  function can't be changed at runtime.
+*/
+#define SCL_EVALUATION_FUNCTION
+#undef SCL_EVALUATION_FUNCTION
 #endif
 
 #ifndef SCL_960_CASTLING
-  /**
-    If set, chess 960 (Fisher random) castling will be considered by the library
-    rather than normal castling. 960 castling is slightly different (e.g.
-    requires the inital rook positions to be stored in board state). The
-    castling move is performed as "capturing own rook".
-  */
-  #define SCL_960_CASTLING 0
+/**
+  If set, chess 960 (Fisher random) castling will be considered by the library
+  rather than normal castling. 960 castling is slightly different (e.g.
+  requires the inital rook positions to be stored in board state). The
+  castling move is performed as "capturing own rook".
+*/
+#define SCL_960_CASTLING 0
 #endif
 
 #ifndef SCL_ALPHA_BETA
-  /**
-    Turns alpha-beta pruning (AI optimization) on or off. This can gain
-    performance and should normally be turned on. AI behavior should not
-    change at all.
-  */
-  #define SCL_ALPHA_BETA 1
+/**
+  Turns alpha-beta pruning (AI optimization) on or off. This can gain
+  performance and should normally be turned on. AI behavior should not
+  change at all.
+*/
+#define SCL_ALPHA_BETA 1
 #endif
 
 /**
@@ -118,7 +118,10 @@ void SCL_randomBetterSeed(uint16_t seed);
 */
 typedef uint8_t SCL_SquareSet[8];
 
-#define SCL_SQUARE_SET_EMPTY {0, 0, 0, 0, 0, 0, 0, 0}
+#define SCL_SQUARE_SET_EMPTY \
+  {                          \
+    0, 0, 0, 0, 0, 0, 0, 0   \
+  }
 
 void SCL_squareSetClear(SCL_SquareSet squareSet);
 void SCL_squareSetAdd(SCL_SquareSet squareSet, uint8_t square);
@@ -130,33 +133,42 @@ uint8_t SCL_squareSetEmpty(const SCL_SquareSet squareSet);
   Returns a random square from a square set.
 */
 uint8_t SCL_squareSetGetRandom(const SCL_SquareSet squareSet,
-  SCL_RandomFunction randFunc);
+                               SCL_RandomFunction randFunc);
 
-#define SCL_SQUARE_SET_ITERATE_BEGIN(squareSet) \
-  { uint8_t iteratedSquare = 0;\
-    uint8_t iterationEnd = 0;\
-    for (int8_t _i = 0; _i < 8 && !iterationEnd; ++_i) {\
-      uint8_t _row = squareSet[_i];\
-      if (_row == 0) { iteratedSquare += 8; continue; }\
-      \
-      for (uint8_t _j = 0; _j < 8 && !iterationEnd; ++_j) {\
-        if (_row & 0x01) {
+#define SCL_SQUARE_SET_ITERATE_BEGIN(squareSet)           \
+  {                                                       \
+    uint8_t iteratedSquare = 0;                           \
+    uint8_t iterationEnd = 0;                             \
+    for (int8_t _i = 0; _i < 8 && !iterationEnd; ++_i)    \
+    {                                                     \
+      uint8_t _row = squareSet[_i];                       \
+      if (_row == 0)                                      \
+      {                                                   \
+        iteratedSquare += 8;                              \
+        continue;                                         \
+      }                                                   \
+                                                          \
+      for (uint8_t _j = 0; _j < 8 && !iterationEnd; ++_j) \
+      {                                                   \
+        if (_row & 0x01)                                  \
+        {
 /*
   Between SCL_SQUARE_SET_ITERATE_BEGIN and _END iteratedSquare variable
   represents the next square contained in the set. To break out of the
   iteration set iterationEnd to 1.
 */
 
-#define SCL_SQUARE_SET_ITERATE_END }\
-  _row >>= 1;\
-  iteratedSquare++;}\
-  } /*for*/ }
+#define SCL_SQUARE_SET_ITERATE_END \
+  }                                \
+  _row >>= 1;                      \
+  iteratedSquare++;                \
+  }                                \
+  } /*for*/                        \
+  }
 
-#define SCL_SQUARE_SET_ITERATE(squareSet,command)\
-  SCL_SQUARE_SET_ITERATE_BEGIN(squareSet)\
-  { command }\
-  SCL_SQUARE_SET_ITERATE_END
- 
+#define SCL_SQUARE_SET_ITERATE(squareSet, command) \
+  SCL_SQUARE_SET_ITERATE_BEGIN(squareSet){command} SCL_SQUARE_SET_ITERATE_END
+
 #define SCL_BOARD_STATE_SIZE 69
 
 /**
@@ -165,7 +177,7 @@ uint8_t SCL_squareSetGetRandom(const SCL_SquareSet squareSet,
     can be either a piece (PRNBKQprnbkq) or empty ('.'). I.e. the state looks
     like this:
 
-      0 (A1) RNBQKBNR 
+      0 (A1) RNBQKBNR
              PPPPPPPP
              ........
              ........
@@ -210,21 +222,23 @@ typedef char SCL_Board[SCL_BOARD_STATE_SIZE];
 #define SCL_BOARD_EXTRA_BYTE 67
 
 #if SCL_960_CASTLING
-  #define _SCL_EXTRA_BYTE_VALUE (0 | (7 << 3)) // rooks on classic positions
+#define _SCL_EXTRA_BYTE_VALUE (0 | (7 << 3)) // rooks on classic positions
 #else
-  #define _SCL_EXTRA_BYTE_VALUE 0
+#define _SCL_EXTRA_BYTE_VALUE 0
 #endif
 
-#define SCL_BOARD_START_STATE \
-  {82, 78, 66, 81, 75, 66, 78, 82,\
-   80, 80, 80, 80, 80, 80, 80, 80,\
-   46, 46, 46, 46, 46, 46, 46, 46,\
-   46, 46, 46, 46, 46, 46, 46, 46,\
-   46, 46, 46, 46, 46, 46, 46, 46,\
-   46, 46, 46, 46, 46, 46, 46, 46,\
-   112,112,112,112,112,112,112,112,\
-   114,110,98, 113,107,98, 110,114,\
-   (char) 0xff,0,0,_SCL_EXTRA_BYTE_VALUE,0}
+#define SCL_BOARD_START_STATE                      \
+  {                                                \
+    82, 78, 66, 81, 75, 66, 78, 82,                \
+        80, 80, 80, 80, 80, 80, 80, 80,            \
+        46, 46, 46, 46, 46, 46, 46, 46,            \
+        46, 46, 46, 46, 46, 46, 46, 46,            \
+        46, 46, 46, 46, 46, 46, 46, 46,            \
+        46, 46, 46, 46, 46, 46, 46, 46,            \
+        112, 112, 112, 112, 112, 112, 112, 112,    \
+        114, 110, 98, 113, 107, 98, 110, 114,      \
+        (char)0xff, 0, 0, _SCL_EXTRA_BYTE_VALUE, 0 \
+  }
 
 #define SCL_FEN_START \
   "rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR w KQkq - 0 1"
@@ -249,31 +263,31 @@ typedef char SCL_Board[SCL_BOARD_STATE_SIZE];
 */
 typedef struct
 {
-  uint8_t squareFrom;      ///< start square
-  uint8_t squareTo;        ///< target square
-  char enPassantCastle;    ///< previous en passant/castle byte
-  char moveCount;          ///< previous values of the move counter byte
-  uint8_t other;           /**< lowest 7 bits: previous value of target square,
-                                highest bit: if 1 then the move was promotion or
-                                en passant */
+  uint8_t squareFrom;   ///< start square
+  uint8_t squareTo;     ///< target square
+  char enPassantCastle; ///< previous en passant/castle byte
+  char moveCount;       ///< previous values of the move counter byte
+  uint8_t other;        /**< lowest 7 bits: previous value of target square,
+                             highest bit: if 1 then the move was promotion or
+                             en passant */
 } SCL_MoveUndo;
 
-#define SCL_GAME_STATE_PLAYING         0x00
-#define SCL_GAME_STATE_WHITE_WIN       0x01
-#define SCL_GAME_STATE_BLACK_WIN       0x02
-#define SCL_GAME_STATE_DRAW            0x10 ///< further unspecified draw
-#define SCL_GAME_STATE_DRAW_STALEMATE  0x11 ///< draw by stalemate
+#define SCL_GAME_STATE_PLAYING 0x00
+#define SCL_GAME_STATE_WHITE_WIN 0x01
+#define SCL_GAME_STATE_BLACK_WIN 0x02
+#define SCL_GAME_STATE_DRAW 0x10            ///< further unspecified draw
+#define SCL_GAME_STATE_DRAW_STALEMATE 0x11  ///< draw by stalemate
 #define SCL_GAME_STATE_DRAW_REPETITION 0x12 ///< draw by repetition
-#define SCL_GAME_STATE_DRAW_50         0x13 ///< draw by 50 move rule
-#define SCL_GAME_STATE_DRAW_DEAD       0x14 ///< draw by dead position
-#define SCL_GAME_STATE_END             0xff ///< end without known result
+#define SCL_GAME_STATE_DRAW_50 0x13         ///< draw by 50 move rule
+#define SCL_GAME_STATE_DRAW_DEAD 0x14       ///< draw by dead position
+#define SCL_GAME_STATE_END 0xff             ///< end without known result
 
 /**
   Converts square in common notation (e.g. 'c' 8) to square number. Only accepts
   lowercase column.
 */
-#define SCL_SQUARE(colChar,rowInt) (((rowInt) - 1) * 8 + ((colChar) - 'a'))
-#define SCL_S(c,r) SCL_SQUARE(c,r)
+#define SCL_SQUARE(colChar, rowInt) (((rowInt)-1) * 8 + ((colChar) - 'a'))
+#define SCL_S(c, r) SCL_SQUARE(c, r)
 
 void SCL_boardInit(SCL_Board board);
 void SCL_boardCopy(const SCL_Board boardFrom, SCL_Board boardTo);
@@ -303,7 +317,7 @@ uint8_t SCL_boardEstimatePhase(SCL_Board board);
   each char being either a piece (RKBKQPrkbkqp) or an empty square ('.').
 */
 void SCL_boardSetPosition(SCL_Board board, const char *pieces,
-  uint8_t castlingEnPassant, uint8_t moveCount, uint8_t ply);
+                          uint8_t castlingEnPassant, uint8_t moveCount, uint8_t ply);
 
 uint8_t SCL_boardsDiffer(SCL_Board b1, SCL_Board b2);
 
@@ -311,7 +325,7 @@ uint8_t SCL_boardsDiffer(SCL_Board b1, SCL_Board b2);
   Gets a random move on given board for the player whose move it is.
 */
 void SCL_boardRandomMove(SCL_Board board, SCL_RandomFunction randFunc,
-  uint8_t *squareFrom, uint8_t *squareTo, char *resultProm);
+                         uint8_t *squareFrom, uint8_t *squareTo, char *resultProm);
 
 #define SCL_FEN_MAX_LENGTH 90
 
@@ -327,7 +341,7 @@ uint8_t SCL_boardToFEN(SCL_Board board, char *string);
 /**
   Loads a board from FEN (Forsyth–Edwards Notation) string. Returns 1 on
   success, 0 otherwise. XFEN isn't supported fully but a start position in
-  chess960 can be loaded with this function. 
+  chess960 can be loaded with this function.
 */
 uint8_t SCL_boardFromFEN(SCL_Board board, const char *string);
 
@@ -337,7 +351,7 @@ uint8_t SCL_boardFromFEN(SCL_Board board, const char *string);
 */
 typedef int16_t (*SCL_StaticEvaluationFunction)(SCL_Board);
 
-/* 
+/*
   NOTE: int8_t as a return value was tried for evaluation function, which would
   be simpler, but it fails to capture important non-material position
   differences counted in fractions of pawn values, hence we have to use int16_t.
@@ -357,7 +371,7 @@ int16_t SCL_boardEvaluateStatic(SCL_Board board);
   baseDepth (you mostly want to keep this under 5).
 */
 int16_t SCL_boardEvaluateDynamic(SCL_Board board, uint8_t baseDepth,
-  uint8_t extensionExtraDepth, SCL_StaticEvaluationFunction evalFunction);
+                                 uint8_t extensionExtraDepth, SCL_StaticEvaluationFunction evalFunction);
 
 #define SCL_EVALUATION_MAX_SCORE 32600 // don't increase this, we need a margin
 
@@ -377,7 +391,7 @@ uint8_t SCL_boardCheck(SCL_Board board, uint8_t white);
   Checks whether given move resets the move counter (used in the 50 move rule).
 */
 uint8_t SCL_boardMoveResetsCount(SCL_Board board,
-  uint8_t squareFrom, uint8_t squareTo);
+                                 uint8_t squareFrom, uint8_t squareTo);
 
 uint8_t SCL_boardMate(SCL_Board board);
 
@@ -386,7 +400,7 @@ uint8_t SCL_boardMate(SCL_Board board);
   info with which the move can be undone.
 */
 SCL_MoveUndo SCL_boardMakeMove(SCL_Board board, uint8_t squareFrom, uint8_t squareTo,
-  char promotePiece);
+                               char promotePiece);
 
 void SCL_boardUndoMove(SCL_Board board, SCL_MoveUndo moveUndo);
 
@@ -400,18 +414,18 @@ uint8_t SCL_boardGameOver(SCL_Board board);
   Checks if given move is legal.
 */
 uint8_t SCL_boardMoveIsLegal(SCL_Board board, uint8_t squareFrom,
-  uint8_t squareTo);
+                             uint8_t squareTo);
 
 /**
   Checks if the player to move has at least one legal move.
 */
 uint8_t SCL_boardMovePossible(SCL_Board board);
 
-#define SCL_POSITION_NORMAL    0x00
-#define SCL_POSITION_CHECK     0x01
-#define SCL_POSITION_MATE      0x02
+#define SCL_POSITION_NORMAL 0x00
+#define SCL_POSITION_CHECK 0x01
+#define SCL_POSITION_MATE 0x02
 #define SCL_POSITION_STALEMATE 0x03
-#define SCL_POSITION_DEAD      0x04
+#define SCL_POSITION_DEAD 0x04
 
 uint8_t SCL_boardGetPosition(SCL_Board board);
 
@@ -421,29 +435,29 @@ uint8_t SCL_boardGetPosition(SCL_Board board);
   or not the square is attacked (not the number of attackers).
 */
 uint8_t SCL_boardSquareAttacked(SCL_Board board, uint8_t square,
-  uint8_t byWhite);
+                                uint8_t byWhite);
 
 /**
   Gets pseudo moves of a piece: all possible moves WITHOUT eliminating moves
   that lead to own check. To get only legal moves use SCL_boardGetMoves.
 */
 void SCL_boardGetPseudoMoves(
-  SCL_Board board,
-  uint8_t pieceSquare,
-  uint8_t checkCastling,
-  SCL_SquareSet result);
+    SCL_Board board,
+    uint8_t pieceSquare,
+    uint8_t checkCastling,
+    SCL_SquareSet result);
 
 /**
   Gets all legal moves of given piece.
 */
 void SCL_boardGetMoves(
-  SCL_Board board,
-  uint8_t pieceSquare,
-  SCL_SquareSet result);
+    SCL_Board board,
+    uint8_t pieceSquare,
+    SCL_SquareSet result);
 
 static inline uint8_t SCL_boardWhitesTurn(SCL_Board board);
 
-static inline uint8_t SCL_pieceIsWhite(char piece); 
+static inline uint8_t SCL_pieceIsWhite(char piece);
 static inline uint8_t SCL_squareIsWhite(uint8_t square);
 char SCL_pieceToColor(uint8_t piece, uint8_t toWhite);
 
@@ -454,39 +468,39 @@ char SCL_pieceToColor(uint8_t piece, uint8_t toWhite);
 static inline uint8_t SCL_coordsToSquare(uint8_t row, uint8_t column);
 
 #ifndef SCL_VALUE_PAWN
-  #define SCL_VALUE_PAWN 256
+#define SCL_VALUE_PAWN 256
 #endif
 
 #ifndef SCL_VALUE_KNIGHT
-  #define SCL_VALUE_KNIGHT 768
+#define SCL_VALUE_KNIGHT 768
 #endif
 
 #ifndef SCL_VALUE_BISHOP
-  #define SCL_VALUE_BISHOP 800
+#define SCL_VALUE_BISHOP 800
 #endif
 
 #ifndef SCL_VALUE_ROOK
-  #define SCL_VALUE_ROOK 1280
+#define SCL_VALUE_ROOK 1280
 #endif
 
 #ifndef SCL_VALUE_QUEEN
-  #define SCL_VALUE_QUEEN 2304
+#define SCL_VALUE_QUEEN 2304
 #endif
 
 #ifndef SCL_VALUE_KING
-  #define SCL_VALUE_KING 0
+#define SCL_VALUE_KING 0
 #endif
 
-#define SCL_ENDGAME_MATERIAL_LIMIT \
+#define SCL_ENDGAME_MATERIAL_LIMIT             \
   (2 * (SCL_VALUE_PAWN * 4 + SCL_VALUE_QUEEN + \
-  SCL_VALUE_KING + SCL_VALUE_ROOK + SCL_VALUE_KNIGHT))
+        SCL_VALUE_KING + SCL_VALUE_ROOK + SCL_VALUE_KNIGHT))
 
-#define SCL_START_MATERIAL \
+#define SCL_START_MATERIAL                                           \
   (16 * SCL_VALUE_PAWN + 4 * SCL_VALUE_ROOK + 4 * SCL_VALUE_KNIGHT + \
-    4 * SCL_VALUE_BISHOP + 2 * SCL_VALUE_QUEEN + 2 * SCL_VALUE_KING)
+   4 * SCL_VALUE_BISHOP + 2 * SCL_VALUE_QUEEN + 2 * SCL_VALUE_KING)
 
 #ifndef SCL_RECORD_MAX_LENGTH
-  #define SCL_RECORD_MAX_LENGTH 256
+#define SCL_RECORD_MAX_LENGTH 256
 #endif
 
 #define SCL_RECORD_MAX_SIZE (SCL_RECORD_MAX_LENGTH * 2)
@@ -522,7 +536,7 @@ typedef uint8_t SCL_Record[SCL_RECORD_MAX_SIZE];
 #define SCL_RECORD_PROM_B 0x80
 #define SCL_RECORD_PROM_N 0xc0
 
-#define SCL_RECORD_ITEM(s0,s1,p,e) ((e) | (s0)),((p) | (s1))
+#define SCL_RECORD_ITEM(s0, s1, p, e) ((e) | (s0)), ((p) | (s1))
 
 void SCL_recordInit(SCL_Record r);
 
@@ -539,22 +553,22 @@ void SCL_recordCopy(SCL_Record recordFrom, SCL_Record recordTo);
 typedef struct
 {
   SCL_Board board;
-  SCL_Record record;          /**< Holds the game record. This record is here 
-                              firstly because games are usually recorded and
-                              secondly this allows undoing moves up to the 
-                              beginning of the game. This infinite undoing will
-                              only work as long as the record is able to hold
-                              the whole game; if the record is full, undoing is
-                              no longet possible. */
+  SCL_Record record; /**< Holds the game record. This record is here
+                     firstly because games are usually recorded and
+                     secondly this allows undoing moves up to the
+                     beginning of the game. This infinite undoing will
+                     only work as long as the record is able to hold
+                     the whole game; if the record is full, undoing is
+                     no longet possible. */
   uint16_t state;
-  uint16_t ply;               ///< ply count (board ply counter is only 8 bit)
+  uint16_t ply; ///< ply count (board ply counter is only 8 bit)
 
-  uint32_t prevMoves[14];     ///< stores last moves, for repetition detection
+  uint32_t prevMoves[14]; ///< stores last moves, for repetition detection
 
-  const char *startState;     /**< Optional pointer to the starting board state.
-                              If this is null, standard chess start position is
-                              assumed. This is needed for undoing moves with
-                              game record. */
+  const char *startState; /**< Optional pointer to the starting board state.
+                          If this is null, standard chess start position is
+                          assumed. This is needed for undoing moves with
+                          game record. */
 } SCL_Game;
 
 /**
@@ -567,7 +581,7 @@ typedef struct
 void SCL_gameInit(SCL_Game *game, const SCL_Board startState);
 
 void SCL_gameMakeMove(SCL_Game *game, uint8_t squareFrom, uint8_t squareTo,
-  char promoteTo);
+                      char promoteTo);
 
 uint8_t SCL_gameUndoMove(SCL_Game *game);
 
@@ -578,7 +592,7 @@ uint8_t SCL_gameUndoMove(SCL_Game *game);
   tested.
 */
 uint8_t SCL_gameGetRepetiotionMove(SCL_Game *game,
-  uint8_t *squareFrom, uint8_t *squareTo);
+                                   uint8_t *squareFrom, uint8_t *squareTo);
 
 /**
   Leads a game record from PGN string. The function will probably not strictly
@@ -593,8 +607,8 @@ uint16_t SCL_recordLength(const SCL_Record r);
   Gets the move out of a game record, returns the end state of the move
   (SCL_RECORD_CONT, SCL_RECORD_END etc.)
 */
-uint8_t SCL_recordGetMove(const SCL_Record r,  uint16_t index,
-  uint8_t *squareFrom, uint8_t *squareTo, char *promotedPiece);
+uint8_t SCL_recordGetMove(const SCL_Record r, uint16_t index,
+                          uint8_t *squareFrom, uint8_t *squareTo, char *promotedPiece);
 
 /**
   Adds another move to the game record. Terminating the record is handled so
@@ -603,7 +617,7 @@ uint8_t SCL_recordGetMove(const SCL_Record r,  uint16_t index,
   the item was added, otherwise 0 (replay was already of maximum size).
 */
 uint8_t SCL_recordAdd(SCL_Record r, uint8_t squareFrom,
-  uint8_t squareTo, char promotePiece, uint8_t endState);
+                      uint8_t squareTo, char promotePiece, uint8_t endState);
 
 /**
   Removes the last move from the record, returns 1 if the replay is non-empty
@@ -640,18 +654,18 @@ int16_t SCL_pieceValuePositive(char piece);
   between best moves with some bias (may not pick the best rated move).
 */
 int16_t SCL_getAIMove(
-  SCL_Board board,
-  uint8_t baseDepth,
-  uint8_t extensionExtraDepth,
-  uint8_t endgameExtraDepth,
-  SCL_StaticEvaluationFunction evalFunc,
-  SCL_RandomFunction randFunc,
-  uint8_t randomness,
-  uint8_t repetitionMoveFrom,
-  uint8_t repetitionMoveTo,
-  uint8_t *resultFrom,
-  uint8_t *resultTo,
-  char *resultProm);
+    SCL_Board board,
+    uint8_t baseDepth,
+    uint8_t extensionExtraDepth,
+    uint8_t endgameExtraDepth,
+    SCL_StaticEvaluationFunction evalFunc,
+    SCL_RandomFunction randFunc,
+    uint8_t randomness,
+    uint8_t repetitionMoveFrom,
+    uint8_t repetitionMoveTo,
+    uint8_t *resultFrom,
+    uint8_t *resultTo,
+    char *resultProm);
 
 /**
   Function that prints out a single character. This is passed to printing
@@ -663,35 +677,35 @@ typedef void (*SCL_PutCharFunction)(char);
   Prints given chessboard using given format and an abstract printing function.
 */
 void SCL_printBoard(
-  SCL_Board board,
-  SCL_PutCharFunction putCharFunc,
-  SCL_SquareSet highlightSquares,
-  uint8_t selectSquare,
-  uint8_t format,
-  uint8_t offset,
-  uint8_t labels,
-  uint8_t blackDown);
+    SCL_Board board,
+    SCL_PutCharFunction putCharFunc,
+    SCL_SquareSet highlightSquares,
+    uint8_t selectSquare,
+    uint8_t format,
+    uint8_t offset,
+    uint8_t labels,
+    uint8_t blackDown);
 
 void SCL_printBoardSimple(
-  SCL_Board board,
-  SCL_PutCharFunction putCharFunc,
-  uint8_t selectSquare,
-  uint8_t format);
+    SCL_Board board,
+    SCL_PutCharFunction putCharFunc,
+    uint8_t selectSquare,
+    uint8_t format);
 
 void SCL_printSquareUTF8(uint8_t square, SCL_PutCharFunction putCharFunc);
 void SCL_printPGN(SCL_Record r, SCL_PutCharFunction putCharFunc,
-  SCL_Board initialState);
+                  SCL_Board initialState);
 
 /**
   Reads a move from string (the notation format is described at the top of this
   file). The function is safe as long as the string is 0 terminated. Returns 1
   on success or 0 on fail (invalid move string).
 */
-uint8_t SCL_stringToMove(const char *moveString, uint8_t *resultFrom, 
-  uint8_t *resultTo, char *resultPromotion);
+uint8_t SCL_stringToMove(const char *moveString, uint8_t *resultFrom,
+                         uint8_t *resultTo, char *resultPromotion);
 
 char *SCL_moveToString(SCL_Board board, uint8_t s0, uint8_t s1,
-  char promotion, char *string);
+                       char promotion, char *string);
 
 /**
   Function used in drawing, it is called to draw the next pixel. The first
@@ -708,11 +722,11 @@ typedef void (*SCL_PutPixelFunction)(uint8_t, uint16_t);
   frame buffer is required.
 */
 void SCL_drawBoard(
-  SCL_Board board,
-  SCL_PutPixelFunction putPixel,
-  uint8_t selectedSquare,
-  SCL_SquareSet highlightSquares,
-  uint8_t blackDown);
+    SCL_Board board,
+    SCL_PutPixelFunction putPixel,
+    uint8_t selectedSquare,
+    SCL_SquareSet highlightSquares,
+    uint8_t blackDown);
 
 /**
   Converts square number to string representation (e.g. "d2"). This function
@@ -769,17 +783,17 @@ void SCL_squareSetClear(SCL_SquareSet squareSet)
 uint8_t SCL_stringToSquare(const char *square)
 {
   return (square[1] - '1') * 8 +
-    (square[0] - ((square[0] >= 'A' && square[0] <= 'Z') ? 'A' : 'a'));
+         (square[0] - ((square[0] >= 'A' && square[0] <= 'Z') ? 'A' : 'a'));
 }
 
 char *SCL_moveToString(SCL_Board board, uint8_t s0, uint8_t s1,
-  char promotion, char *string)
+                       char promotion, char *string)
 {
   char *result = string;
 
-  SCL_squareToString(s0,string);
+  SCL_squareToString(s0, string);
   string += 2;
-  string = SCL_squareToString(s1,string);
+  string = SCL_squareToString(s1, string);
   string += 2;
 
   char c = board[s0];
@@ -807,7 +821,7 @@ uint8_t SCL_boardWhitesTurn(SCL_Board board)
 
 uint8_t SCL_coordsToSquare(uint8_t row, uint8_t column)
 {
-  return row * 8 + column; 
+  return row * 8 + column;
 }
 
 uint8_t SCL_pieceIsWhite(char piece)
@@ -822,7 +836,7 @@ char *SCL_squareToString(uint8_t square, char *string)
 
   return string;
 }
-  
+
 uint8_t SCL_squareIsWhite(uint8_t square)
 {
   return (square % 2) != ((square / 8) % 2);
@@ -830,8 +844,7 @@ uint8_t SCL_squareIsWhite(uint8_t square)
 
 char SCL_pieceToColor(uint8_t piece, uint8_t toWhite)
 {
-  return (SCL_pieceIsWhite(piece) == toWhite) ?
-    piece : (piece + (toWhite ? -32 : 32));
+  return (SCL_pieceIsWhite(piece) == toWhite) ? piece : (piece + (toWhite ? -32 : 32));
 }
 
 /**
@@ -849,8 +862,7 @@ void _SCL_board960RememberRookPositions(SCL_Board board)
   {
     if (board[pos] == 'R')
     {
-      board[SCL_BOARD_EXTRA_BYTE] = rooks == 2 ? pos :
-        (board[SCL_BOARD_EXTRA_BYTE] | (pos << 3));
+      board[SCL_BOARD_EXTRA_BYTE] = rooks == 2 ? pos : (board[SCL_BOARD_EXTRA_BYTE] | (pos << 3));
 
       rooks--;
     }
@@ -868,10 +880,22 @@ void SCL_boardInit(SCL_Board board)
 
   char *b = board;
 
-  *b = 'R'; b++; *b = 'N'; b++;
-  *b = 'B'; b++; *b = 'Q'; b++;
-  *b = 'K'; b++; *b = 'B'; b++;
-  *b = 'N'; b++; *b = 'R'; b++;
+  *b = 'R';
+  b++;
+  *b = 'N';
+  b++;
+  *b = 'B';
+  b++;
+  *b = 'Q';
+  b++;
+  *b = 'K';
+  b++;
+  *b = 'B';
+  b++;
+  *b = 'N';
+  b++;
+  *b = 'R';
+  b++;
 
   char *b2 = board + 48;
 
@@ -886,15 +910,27 @@ void SCL_boardInit(SCL_Board board)
 
   b += 8;
 
-  *b = 'r'; b++; *b = 'n'; b++;
-  *b = 'b'; b++; *b = 'q'; b++;
-  *b = 'k'; b++; *b = 'b'; b++;
-  *b = 'n'; b++; *b = 'r'; b++;
+  *b = 'r';
+  b++;
+  *b = 'n';
+  b++;
+  *b = 'b';
+  b++;
+  *b = 'q';
+  b++;
+  *b = 'k';
+  b++;
+  *b = 'b';
+  b++;
+  *b = 'n';
+  b++;
+  *b = 'r';
+  b++;
 
   for (uint8_t i = 0; i < SCL_BOARD_STATE_SIZE - SCL_BOARD_SQUARES; ++i, ++b)
     *b = 0;
 
-  board[SCL_BOARD_ENPASSANT_CASTLE_BYTE] = (char) 0xff;
+  board[SCL_BOARD_ENPASSANT_CASTLE_BYTE] = (char)0xff;
 
 #if SCL_960_CASTLING
   _SCL_board960RememberRookPositions(board);
@@ -939,28 +975,17 @@ void SCL_boardInit960(SCL_Board board, uint16_t positionNumber)
 
   // maybe there's a simpler way :)
 
-  _SCL_boardPlaceOnNthAvailable(board,helper % 6,'Q');
-  _SCL_boardPlaceOnNthAvailable(board,0,helper <= 23 ? 'N' : 'R');
+  _SCL_boardPlaceOnNthAvailable(board, helper % 6, 'Q');
+  _SCL_boardPlaceOnNthAvailable(board, 0, helper <= 23 ? 'N' : 'R');
 
-  _SCL_boardPlaceOnNthAvailable(board,0,
-    (helper >= 7 && helper <= 23) ? 'R' :
-      (helper > 41 ? 'K' : 'N' ));
+  _SCL_boardPlaceOnNthAvailable(board, 0,
+                                (helper >= 7 && helper <= 23) ? 'R' : (helper > 41 ? 'K' : 'N'));
 
-  _SCL_boardPlaceOnNthAvailable(board,0,
-    (helper <= 5 || helper >= 54) ? 'R' : 
-      (((helper >= 12 && helper <= 23) ||
-      (helper >= 30 && helper <= 41)) ? 'K' : 'N'));
+  _SCL_boardPlaceOnNthAvailable(board, 0,
+                                (helper <= 5 || helper >= 54) ? 'R' : (((helper >= 12 && helper <= 23) || (helper >= 30 && helper <= 41)) ? 'K' : 'N'));
 
-  _SCL_boardPlaceOnNthAvailable(board,0,
-    (helper <= 11 || (helper <= 29 && helper >= 24)) ? 'K' :
-      (
-        (
-          (helper >= 18 && helper <= 23) ||
-          (helper >= 36 && helper <= 41) ||
-          (helper >= 48 && helper <= 53)
-        ) ? 'R' : 'N'
-      )
-    );
+  _SCL_boardPlaceOnNthAvailable(board, 0,
+                                (helper <= 11 || (helper <= 29 && helper >= 24)) ? 'K' : (((helper >= 18 && helper <= 23) || (helper >= 36 && helper <= 41) || (helper >= 48 && helper <= 53)) ? 'R' : 'N'));
 
   uint8_t rooks = 0;
 
@@ -968,10 +993,10 @@ void SCL_boardInit960(SCL_Board board, uint16_t positionNumber)
     if (board[i] == 'R')
       rooks++;
 
-  _SCL_boardPlaceOnNthAvailable(board,0,rooks == 2 ? 'N' : 'R');
-  
+  _SCL_boardPlaceOnNthAvailable(board, 0, rooks == 2 ? 'N' : 'R');
+
   for (uint8_t i = 0; i < 8; ++i)
-    board[56 + i] = SCL_pieceToColor(board[i],0);
+    board[56 + i] = SCL_pieceToColor(board[i], 0);
 
 #if SCL_960_CASTLING
   _SCL_board960RememberRookPositions(board);
@@ -1017,167 +1042,168 @@ void SCL_recordFromPGN(SCL_Record r, const char *pgn)
   {
     switch (state)
     {
-      case 0: // skipping tags and spaces, outside []
-        if (*pgn == '1')
-          state = 2;
-        else if (*pgn == '[')
-          state = 1;
+    case 0: // skipping tags and spaces, outside []
+      if (*pgn == '1')
+        state = 2;
+      else if (*pgn == '[')
+        state = 1;
 
-        break;
+      break;
 
-      case 1: // skipping tags and spaces, inside []
-        if (*pgn == ']')
-          state = 0;
+    case 1: // skipping tags and spaces, inside []
+      if (*pgn == ']')
+        state = 0;
 
-        break;
+      break;
 
-      case 2: // reading move number
-        if (*pgn == '{')
-          state = 3;
-        else if ((*pgn >= 'a' && *pgn <= 'h') || (*pgn >= 'A' && *pgn <= 'Z'))
-        {
-          state = 4;
-          pgn--;
-        }
-
-        break;
-
-      case 3: // initial comment
-        if (*pgn == '}')
-          state = 2;
-
-        break;
-
-      case 4: // reading move
+    case 2: // reading move number
+      if (*pgn == '{')
+        state = 3;
+      else if ((*pgn >= 'a' && *pgn <= 'h') || (*pgn >= 'A' && *pgn <= 'Z'))
       {
-        char piece = 'p';
-        char promoteTo = 'q';
-        uint8_t castle = 0;
-        uint8_t promotion = 0;
-
-        int8_t coords[4];
-
-        uint8_t ranks = 0, files = 0;
-
-        for (uint8_t i = 0; i < 4; ++i)
-          coords[i] = -1;
-
-        while (*pgn != ' ' && *pgn != '\n' && 
-          *pgn != '\t' && *pgn != '{' && *pgn != 0)
-        {
-          if (*pgn == '=')
-            promotion = 1;
-          if (*pgn == 'O' || *pgn == '0')
-            castle++;
-          if (*pgn >= 'A' && *pgn <= 'Z')
-          {
-            if (promotion)
-              promoteTo = *pgn;
-            else
-              piece = *pgn;
-          }
-          else if (*pgn >= 'a' && *pgn <= 'h')
-          {
-            coords[files * 2] = *pgn - 'a';
-            files++;
-          }
-          else if (*pgn >= '1' && *pgn <= '8')
-          {
-            coords[1 + ranks * 2] = *pgn - '1';
-            ranks++;
-          }
-
-          pgn++;
-        }
-
-        if (castle)
-        {
-          piece = 'K';
-
-          coords[0] = 4;
-          coords[1] = 0;
-          coords[2] = castle < 3 ? 6 : 2;
-          coords[3] = 0;
-
-          if (evenMove)
-          {
-            coords[1] = 7;
-            coords[3] = 7;
-          }
-        }
-
-        piece = SCL_pieceToColor(piece,evenMove == 0);
-
-        if (coords[2] < 0)
-        {
-          coords[2] = coords[0];
-          coords[0] = -1;
-        }
-
-        if (coords[3] < 0)
-        {
-          coords[3] = coords[1];
-          coords[1] = -1;
-        }
-          
-        uint8_t squareTo = coords[3] * 8 + coords[2];
-
-        if (coords[0] < 0 || coords[1] < 0)
-        {
-          // without complete starting coords we have to find the piece
-
-          for (int i = 0; i < SCL_BOARD_SQUARES; ++i)
-            if (board[i] == piece)
-            {
-              SCL_SquareSet s;
-
-              SCL_squareSetClear(s);
-
-              SCL_boardGetMoves(board,i,s);
-
-              if (SCL_squareSetContains(s,squareTo) &&
-                (coords[0] < 0 || coords[0] == i % 8) &&
-                (coords[1] < 0 || coords[1] == i / 8))
-              {
-                coords[0] = i % 8;
-                coords[1] = i / 8;
-                break;
-              }
-            }
-        }
-
-        uint8_t squareFrom = coords[1] * 8 + coords[0];
-
-        SCL_boardMakeMove(board,squareFrom,squareTo,promoteTo);
-
-// for some reason tcc bugs here, the above line sets squareFrom to 0 lol
-// can be fixed with doing "squareFrom = coords[1] * 8 + coords[0];" again
-
-        SCL_recordAdd(r,squareFrom,squareTo,promoteTo,SCL_RECORD_CONT);
-
-        while (*pgn == ' ' || *pgn == '\n' || *pgn == '\t' || *pgn == '{')
-        {
-          if (*pgn == '{')
-            while (*pgn != '}')
-              pgn++;
-
-          pgn++;
-        }
-
-        if (*pgn == 0)
-          return;
-
+        state = 4;
         pgn--;
-
-        if (evenMove)
-          state = 2;
-
-        evenMove = !evenMove;
-
-        break;
       }
 
-      default: break;
+      break;
+
+    case 3: // initial comment
+      if (*pgn == '}')
+        state = 2;
+
+      break;
+
+    case 4: // reading move
+    {
+      char piece = 'p';
+      char promoteTo = 'q';
+      uint8_t castle = 0;
+      uint8_t promotion = 0;
+
+      int8_t coords[4];
+
+      uint8_t ranks = 0, files = 0;
+
+      for (uint8_t i = 0; i < 4; ++i)
+        coords[i] = -1;
+
+      while (*pgn != ' ' && *pgn != '\n' &&
+             *pgn != '\t' && *pgn != '{' && *pgn != 0)
+      {
+        if (*pgn == '=')
+          promotion = 1;
+        if (*pgn == 'O' || *pgn == '0')
+          castle++;
+        if (*pgn >= 'A' && *pgn <= 'Z')
+        {
+          if (promotion)
+            promoteTo = *pgn;
+          else
+            piece = *pgn;
+        }
+        else if (*pgn >= 'a' && *pgn <= 'h')
+        {
+          coords[files * 2] = *pgn - 'a';
+          files++;
+        }
+        else if (*pgn >= '1' && *pgn <= '8')
+        {
+          coords[1 + ranks * 2] = *pgn - '1';
+          ranks++;
+        }
+
+        pgn++;
+      }
+
+      if (castle)
+      {
+        piece = 'K';
+
+        coords[0] = 4;
+        coords[1] = 0;
+        coords[2] = castle < 3 ? 6 : 2;
+        coords[3] = 0;
+
+        if (evenMove)
+        {
+          coords[1] = 7;
+          coords[3] = 7;
+        }
+      }
+
+      piece = SCL_pieceToColor(piece, evenMove == 0);
+
+      if (coords[2] < 0)
+      {
+        coords[2] = coords[0];
+        coords[0] = -1;
+      }
+
+      if (coords[3] < 0)
+      {
+        coords[3] = coords[1];
+        coords[1] = -1;
+      }
+
+      uint8_t squareTo = coords[3] * 8 + coords[2];
+
+      if (coords[0] < 0 || coords[1] < 0)
+      {
+        // without complete starting coords we have to find the piece
+
+        for (int i = 0; i < SCL_BOARD_SQUARES; ++i)
+          if (board[i] == piece)
+          {
+            SCL_SquareSet s;
+
+            SCL_squareSetClear(s);
+
+            SCL_boardGetMoves(board, i, s);
+
+            if (SCL_squareSetContains(s, squareTo) &&
+                (coords[0] < 0 || coords[0] == i % 8) &&
+                (coords[1] < 0 || coords[1] == i / 8))
+            {
+              coords[0] = i % 8;
+              coords[1] = i / 8;
+              break;
+            }
+          }
+      }
+
+      uint8_t squareFrom = coords[1] * 8 + coords[0];
+
+      SCL_boardMakeMove(board, squareFrom, squareTo, promoteTo);
+
+      // for some reason tcc bugs here, the above line sets squareFrom to 0 lol
+      // can be fixed with doing "squareFrom = coords[1] * 8 + coords[0];" again
+
+      SCL_recordAdd(r, squareFrom, squareTo, promoteTo, SCL_RECORD_CONT);
+
+      while (*pgn == ' ' || *pgn == '\n' || *pgn == '\t' || *pgn == '{')
+      {
+        if (*pgn == '{')
+          while (*pgn != '}')
+            pgn++;
+
+        pgn++;
+      }
+
+      if (*pgn == 0)
+        return;
+
+      pgn--;
+
+      if (evenMove)
+        state = 2;
+
+      evenMove = !evenMove;
+
+      break;
+    }
+
+    default:
+      break;
     }
 
     pgn++;
@@ -1197,11 +1223,11 @@ uint16_t SCL_recordLength(const SCL_Record r)
   return (result / 2) + 1;
 }
 
-uint8_t SCL_recordGetMove(const SCL_Record r,  uint16_t index,
-  uint8_t *squareFrom, uint8_t *squareTo, char *promotedPiece)
-{ 
+uint8_t SCL_recordGetMove(const SCL_Record r, uint16_t index,
+                          uint8_t *squareFrom, uint8_t *squareTo, char *promotedPiece)
+{
   index *= 2;
- 
+
   uint8_t b = r[index];
 
   *squareFrom = b & 0x3f;
@@ -1210,25 +1236,33 @@ uint8_t SCL_recordGetMove(const SCL_Record r,  uint16_t index,
   index++;
 
   b = r[index];
- 
+
   *squareTo = b & 0x3f;
 
   b &= 0xc0;
 
   switch (b)
   {
-    case SCL_RECORD_PROM_Q: *promotedPiece = 'q'; break;
-    case SCL_RECORD_PROM_R: *promotedPiece = 'r'; break;
-    case SCL_RECORD_PROM_B: *promotedPiece = 'b'; break;
-    case SCL_RECORD_PROM_N: 
-    default:            *promotedPiece = 'n'; break;
+  case SCL_RECORD_PROM_Q:
+    *promotedPiece = 'q';
+    break;
+  case SCL_RECORD_PROM_R:
+    *promotedPiece = 'r';
+    break;
+  case SCL_RECORD_PROM_B:
+    *promotedPiece = 'b';
+    break;
+  case SCL_RECORD_PROM_N:
+  default:
+    *promotedPiece = 'n';
+    break;
   }
 
   return result;
 }
 
 uint8_t SCL_recordAdd(SCL_Record r, uint8_t squareFrom,
-  uint8_t squareTo, char promotePiece, uint8_t endState)
+                      uint8_t squareTo, char promotePiece, uint8_t endState)
 {
   uint16_t l = SCL_recordLength(r);
 
@@ -1249,11 +1283,23 @@ uint8_t SCL_recordAdd(SCL_Record r, uint8_t squareFrom,
 
   switch (promotePiece)
   {
-    case 'n': case 'N': p = SCL_RECORD_PROM_N; break;
-    case 'b': case 'B': p = SCL_RECORD_PROM_B; break;
-    case 'r': case 'R': p = SCL_RECORD_PROM_R; break;
-    case 'q': case 'Q': 
-    default:            p = SCL_RECORD_PROM_Q; break;
+  case 'n':
+  case 'N':
+    p = SCL_RECORD_PROM_N;
+    break;
+  case 'b':
+  case 'B':
+    p = SCL_RECORD_PROM_B;
+    break;
+  case 'r':
+  case 'R':
+    p = SCL_RECORD_PROM_R;
+    break;
+  case 'q':
+  case 'Q':
+  default:
+    p = SCL_RECORD_PROM_Q;
+    break;
   }
 
   l++;
@@ -1266,7 +1312,7 @@ uint8_t SCL_recordAdd(SCL_Record r, uint8_t squareFrom,
 uint8_t SCL_recordRemoveLast(SCL_Record r)
 {
   uint16_t l = SCL_recordLength(r);
-  
+
   if (l == 0)
     return 0;
 
@@ -1278,7 +1324,7 @@ uint8_t SCL_recordRemoveLast(SCL_Record r)
 
     r[l] = (r[l] & 0x3f) | SCL_RECORD_END;
   }
-  
+
   return 1;
 }
 
@@ -1296,8 +1342,8 @@ void SCL_recordApply(const SCL_Record r, SCL_Board b, uint16_t moves)
     uint8_t s0, s1;
     char p;
 
-     SCL_recordGetMove(r,i,&s0,&s1,&p);
-     SCL_boardMakeMove(b,s0,s1,p);
+    SCL_recordGetMove(r, i, &s0, &s1, &p);
+    SCL_boardMakeMove(b, s0, s1, p);
   }
 }
 
@@ -1318,45 +1364,46 @@ void SCL_boardUndoMove(SCL_Board board, SCL_MoveUndo moveUndo)
     moveUndo.squareTo /= 8;
 
     if (moveUndo.squareTo == 0 || moveUndo.squareTo == 7)
-      board[moveUndo.squareFrom] = SCL_pieceIsWhite(board[moveUndo.squareFrom]) 
-        ? 'P' : 'p';
-      // ^ was promotion
+      board[moveUndo.squareFrom] = SCL_pieceIsWhite(board[moveUndo.squareFrom])
+                                       ? 'P'
+                                       : 'p';
+    // ^ was promotion
     else
       board[(moveUndo.squareFrom / 8) * 8 + (moveUndo.enPassantCastle & 0x0f)] =
-        (board[moveUndo.squareFrom] == 'P') ? 'p' : 'P'; // was en passant
+          (board[moveUndo.squareFrom] == 'P') ? 'p' : 'P'; // was en passant
   }
 #if !SCL_960_CASTLING
   else if (board[moveUndo.squareFrom] == 'k' && // black castling
-    moveUndo.squareFrom == 60)
+           moveUndo.squareFrom == 60)
   {
     if (moveUndo.squareTo == 58)
     {
       board[59] = '.';
       board[56] = 'r';
-    } 
+    }
     else if (moveUndo.squareTo == 62)
     {
       board[61] = '.';
       board[63] = 'r';
-    } 
+    }
   }
   else if (board[moveUndo.squareFrom] == 'K' && // white castling
-    moveUndo.squareFrom == 4)
+           moveUndo.squareFrom == 4)
   {
     if (moveUndo.squareTo == 2)
     {
       board[3] = '.';
       board[0] = 'R';
-    } 
+    }
     else if (moveUndo.squareTo == 6)
     {
       board[5] = '.';
       board[7] = 'R';
-    } 
+    }
   }
 #else // 960 castling
   else if (((moveUndo.other & 0x7f) == 'r') && // black castling
-    (squareToNow == '.' || !SCL_pieceIsWhite(squareToNow)))
+           (squareToNow == '.' || !SCL_pieceIsWhite(squareToNow)))
   {
     board[moveUndo.squareTo < moveUndo.squareFrom ? 59 : 61] = '.';
     board[moveUndo.squareTo < moveUndo.squareFrom ? 58 : 62] = '.';
@@ -1365,7 +1412,7 @@ void SCL_boardUndoMove(SCL_Board board, SCL_MoveUndo moveUndo)
     board[moveUndo.squareTo] = 'r';
   }
   else if (((moveUndo.other & 0x7f) == 'R') && // white castling
-    (squareToNow == '.' || SCL_pieceIsWhite(squareToNow)))
+           (squareToNow == '.' || SCL_pieceIsWhite(squareToNow)))
   {
     board[moveUndo.squareTo < moveUndo.squareFrom ? 3 : 5] = '.';
     board[moveUndo.squareTo < moveUndo.squareFrom ? 2 : 6] = '.';
@@ -1385,33 +1432,42 @@ void _SCL_handleRookActivity(SCL_Board board, uint8_t rookSquare)
 #if !SCL_960_CASTLING
   switch (rookSquare)
   {
-    case 0:  board[SCL_BOARD_ENPASSANT_CASTLE_BYTE] &= (uint8_t) ~0x20; break;
-    case 7:  board[SCL_BOARD_ENPASSANT_CASTLE_BYTE] &= (uint8_t) ~0x10; break;
-    case 56: board[SCL_BOARD_ENPASSANT_CASTLE_BYTE] &= (uint8_t) ~0x80; break;
-    case 63: board[SCL_BOARD_ENPASSANT_CASTLE_BYTE] &= (uint8_t) ~0x40; break;
-    default: break;
+  case 0:
+    board[SCL_BOARD_ENPASSANT_CASTLE_BYTE] &= (uint8_t)~0x20;
+    break;
+  case 7:
+    board[SCL_BOARD_ENPASSANT_CASTLE_BYTE] &= (uint8_t)~0x10;
+    break;
+  case 56:
+    board[SCL_BOARD_ENPASSANT_CASTLE_BYTE] &= (uint8_t)~0x80;
+    break;
+  case 63:
+    board[SCL_BOARD_ENPASSANT_CASTLE_BYTE] &= (uint8_t)~0x40;
+    break;
+  default:
+    break;
   }
 #else // 960 castling
   if (rookSquare == (board[SCL_BOARD_EXTRA_BYTE] & 0x07))
-    board[SCL_BOARD_ENPASSANT_CASTLE_BYTE] &= (uint8_t) ~0x20;
+    board[SCL_BOARD_ENPASSANT_CASTLE_BYTE] &= (uint8_t)~0x20;
   else if (rookSquare == (board[SCL_BOARD_EXTRA_BYTE] >> 3))
-    board[SCL_BOARD_ENPASSANT_CASTLE_BYTE] &= (uint8_t) ~0x10;
+    board[SCL_BOARD_ENPASSANT_CASTLE_BYTE] &= (uint8_t)~0x10;
   else if (rookSquare == 56 + (board[SCL_BOARD_EXTRA_BYTE] & 0x07))
-    board[SCL_BOARD_ENPASSANT_CASTLE_BYTE] &= (uint8_t) ~0x80;
+    board[SCL_BOARD_ENPASSANT_CASTLE_BYTE] &= (uint8_t)~0x80;
   else if (rookSquare == 56 + (board[SCL_BOARD_EXTRA_BYTE] >> 3))
-    board[SCL_BOARD_ENPASSANT_CASTLE_BYTE] &= (uint8_t) ~0x40;
+    board[SCL_BOARD_ENPASSANT_CASTLE_BYTE] &= (uint8_t)~0x40;
 #endif
 }
 
-SCL_MoveUndo SCL_boardMakeMove(SCL_Board board, uint8_t squareFrom, uint8_t squareTo, 
-  char promotePiece)
+SCL_MoveUndo SCL_boardMakeMove(SCL_Board board, uint8_t squareFrom, uint8_t squareTo,
+                               char promotePiece)
 {
   char s = board[squareFrom];
 
   SCL_MoveUndo moveUndo;
 
   moveUndo.squareFrom = squareFrom;
-  moveUndo.squareTo = squareTo; 
+  moveUndo.squareTo = squareTo;
   moveUndo.moveCount = board[SCL_BOARD_MOVE_COUNT_BYTE];
   moveUndo.enPassantCastle = board[SCL_BOARD_ENPASSANT_CASTLE_BYTE];
   moveUndo.other = board[squareTo];
@@ -1419,7 +1475,7 @@ SCL_MoveUndo SCL_boardMakeMove(SCL_Board board, uint8_t squareFrom, uint8_t squa
   // reset the en-passant state
   board[SCL_BOARD_ENPASSANT_CASTLE_BYTE] |= 0x0f;
 
-  if (SCL_boardMoveResetsCount(board,squareFrom,squareTo))
+  if (SCL_boardMoveResetsCount(board, squareFrom, squareTo))
     board[SCL_BOARD_MOVE_COUNT_BYTE] = 0;
   else
     board[SCL_BOARD_MOVE_COUNT_BYTE]++;
@@ -1435,7 +1491,7 @@ SCL_MoveUndo SCL_boardMakeMove(SCL_Board board, uint8_t squareFrom, uint8_t squa
     {
       int8_t difference = squareTo - squareFrom;
 
-      char rook = SCL_pieceToColor('r',SCL_pieceIsWhite(s));
+      char rook = SCL_pieceToColor('r', SCL_pieceIsWhite(s));
 
       if (difference == 2) // short
       {
@@ -1450,12 +1506,12 @@ SCL_MoveUndo SCL_boardMakeMove(SCL_Board board, uint8_t squareFrom, uint8_t squa
     }
 #else // 960 castling
     uint8_t isWhite = SCL_pieceIsWhite(s);
-    char rook = SCL_pieceToColor('r',isWhite);
+    char rook = SCL_pieceToColor('r', isWhite);
 
     if (board[squareTo] == rook)
     {
       castled = 1;
-        
+
       board[squareFrom] = '.';
       board[squareTo] = '.';
 
@@ -1483,39 +1539,39 @@ SCL_MoveUndo SCL_boardMakeMove(SCL_Board board, uint8_t squareFrom, uint8_t squa
 
     if (rowDiff == 2 || rowDiff == -2) // record en passant column
     {
-      board[SCL_BOARD_ENPASSANT_CASTLE_BYTE] = 
-        (board[SCL_BOARD_ENPASSANT_CASTLE_BYTE] & 0xf0) | (squareFrom % 8);
+      board[SCL_BOARD_ENPASSANT_CASTLE_BYTE] =
+          (board[SCL_BOARD_ENPASSANT_CASTLE_BYTE] & 0xf0) | (squareFrom % 8);
     }
 
     if (row == 0 || row == 7)
     {
       // promotion
-      s = SCL_pieceToColor(promotePiece,SCL_pieceIsWhite(s));
+      s = SCL_pieceToColor(promotePiece, SCL_pieceIsWhite(s));
 
       moveUndo.other |= 0x80;
     }
     else
-    { 
+    {
       // check en passant move
 
       int8_t columnDiff = (squareTo % 8) - (squareFrom % 8);
 
       if ((columnDiff != 0) && (board[squareTo] == '.'))
       {
-        board[squareFrom + columnDiff] = '.'; 
+        board[squareFrom + columnDiff] = '.';
         moveUndo.other |= 0x80;
       }
     }
   }
   else if ((s == 'r') || (s == 'R'))
-    _SCL_handleRookActivity(board,squareFrom);
+    _SCL_handleRookActivity(board, squareFrom);
 
   char taken = board[squareTo];
 
   // taking a rook may also disable castling:
 
   if (taken == 'R' || taken == 'r')
-    _SCL_handleRookActivity(board,squareTo);
+    _SCL_handleRookActivity(board, squareTo);
 
 #if SCL_960_CASTLING
   if (!castled)
@@ -1531,7 +1587,7 @@ SCL_MoveUndo SCL_boardMakeMove(SCL_Board board, uint8_t squareFrom, uint8_t squa
 }
 
 void SCL_boardSetPosition(SCL_Board board, const char *pieces,
-  uint8_t castlingEnPassant, uint8_t moveCount, uint8_t ply)
+                          uint8_t castlingEnPassant, uint8_t moveCount, uint8_t ply)
 {
   for (uint8_t i = 0; i < SCL_BOARD_SQUARES; ++i, pieces++)
     if (*pieces != 0)
@@ -1577,13 +1633,13 @@ uint8_t SCL_squareSetEmpty(const SCL_SquareSet squareSet)
 {
   for (uint8_t i = 0; i < 8; ++i)
     if (squareSet[i] != 0)
-      return 0;  
+      return 0;
 
   return 1;
 }
 
 uint8_t SCL_squareSetGetRandom(
-  const SCL_SquareSet squareSet, SCL_RandomFunction randFunc)
+    const SCL_SquareSet squareSet, SCL_RandomFunction randFunc)
 {
   uint8_t size = SCL_squareSetSize(squareSet);
 
@@ -1595,7 +1651,7 @@ uint8_t SCL_squareSetGetRandom(
 
   while (i < SCL_BOARD_SQUARES)
   {
-    if (SCL_squareSetContains(squareSet,i))
+    if (SCL_squareSetContains(squareSet, i))
     {
       n--;
 
@@ -1612,13 +1668,13 @@ uint8_t SCL_squareSetGetRandom(
 void SCL_boardCopy(const SCL_Board boardFrom, SCL_Board boardTo)
 {
   for (uint8_t i = 0; i < SCL_BOARD_STATE_SIZE; ++i)
-    boardTo[i] = boardFrom[i]; 
+    boardTo[i] = boardFrom[i];
 }
 
 uint8_t SCL_boardSquareAttacked(
-  SCL_Board board,
-  uint8_t square,
-  uint8_t byWhite)
+    SCL_Board board,
+    uint8_t square,
+    uint8_t byWhite)
 {
   const char *currentSquare = board;
 
@@ -1627,38 +1683,38 @@ uint8_t SCL_boardSquareAttacked(
 
   char previous = board[square];
 
-  board[square] = SCL_pieceToColor('r',!byWhite);
+  board[square] = SCL_pieceToColor('r', !byWhite);
 
   for (uint8_t i = 0; i < SCL_BOARD_SQUARES; ++i, ++currentSquare)
   {
     char s = *currentSquare;
- 
+
     if ((s == '.') || (SCL_pieceIsWhite(s) != byWhite))
       continue;
 
     SCL_SquareSet moves;
-    SCL_boardGetPseudoMoves(board,i,0,moves);
+    SCL_boardGetPseudoMoves(board, i, 0, moves);
 
-    if (SCL_squareSetContains(moves,square))
+    if (SCL_squareSetContains(moves, square))
     {
       board[square] = previous;
       return 1;
     }
   }
-      
-  board[square] = previous;    
+
+  board[square] = previous;
   return 0;
 }
 
-uint8_t SCL_boardCheck(SCL_Board board,uint8_t white)
+uint8_t SCL_boardCheck(SCL_Board board, uint8_t white)
 {
   const char *square = board;
   char kingChar = white ? 'K' : 'k';
 
   for (uint8_t i = 0; i < SCL_BOARD_SQUARES; ++i, ++square)
-    if ((*square == kingChar && 
-      SCL_boardSquareAttacked(board,i,!white)))
-        return 1;
+    if ((*square == kingChar &&
+         SCL_boardSquareAttacked(board, i, !white)))
+      return 1;
 
   return 0;
 }
@@ -1684,7 +1740,7 @@ uint8_t SCL_boardMovePossible(SCL_Board board)
     {
       SCL_SquareSet moves;
 
-      SCL_boardGetMoves(board,i,moves);
+      SCL_boardGetMoves(board, i, moves);
 
       if (SCL_squareSetSize(moves) != 0)
         return 1;
@@ -1700,10 +1756,10 @@ uint8_t SCL_boardMate(SCL_Board board)
 }
 
 void SCL_boardGetPseudoMoves(
-  SCL_Board board,
-  uint8_t pieceSquare,
-  uint8_t checkCastling,
-  SCL_SquareSet result)
+    SCL_Board board,
+    uint8_t pieceSquare,
+    uint8_t checkCastling,
+    SCL_SquareSet result)
 {
   char piece = board[pieceSquare];
 
@@ -1715,278 +1771,278 @@ void SCL_boardGetPseudoMoves(
 
   switch (piece)
   {
-    case 'P':
-      pawnOffset = 8;
-    case 'p':
+  case 'P':
+    pawnOffset = 8;
+  case 'p':
+  {
+    uint8_t square = pieceSquare + pawnOffset;
+    uint8_t verticalPosition = pieceSquare / 8;
+
+    if (board[square] == '.') // forward move
     {
-      uint8_t square = pieceSquare + pawnOffset;
-      uint8_t verticalPosition = pieceSquare / 8;
+      SCL_squareSetAdd(result, square);
 
-      if (board[square] == '.') // forward move
+      if (verticalPosition == (1 + (piece == 'p') * 5)) // start position?
       {
-        SCL_squareSetAdd(result,square);
+        uint8_t square2 = square + pawnOffset;
 
-        if (verticalPosition == (1 + (piece == 'p') * 5)) // start position?
-        {
-          uint8_t square2 = square + pawnOffset;
-
-          if (board[square2] == '.')
-            SCL_squareSetAdd(result,square2);
-        }
-      }
-
-      #define checkDiagonal(hor,add) \
-        if (horizontalPosition != hor) \
-        { \
-          uint8_t square2 = square + add; \
-          char c = board[square2]; \
-          if (c != '.' && SCL_pieceIsWhite(c) != isWhite) \
-            SCL_squareSetAdd(result,square2); \
-        }
-
-      // diagonal moves
-      checkDiagonal(0,-1)
-      checkDiagonal(7,1)
-
-      uint8_t enPassantRow = 4;
-      uint8_t enemyPawn = 'p';
-
-      if (piece == 'p')
-      {
-        enPassantRow = 3;
-        enemyPawn = 'P';
-      }
-
-      // en-passant moves
-      if (verticalPosition == enPassantRow)
-      {
-        uint8_t enPassantColumn = board[SCL_BOARD_ENPASSANT_CASTLE_BYTE] & 0x0f;
-        uint8_t column = pieceSquare % 8;
-
-        for (int8_t offset = -1; offset < 2; offset += 2)
-          if ((enPassantColumn == column + offset) &&
-              (board[pieceSquare + offset] == enemyPawn))
-          {
-            SCL_squareSetAdd(result,pieceSquare + pawnOffset + offset);
-            break;
-          }
-      } 
-
-      #undef checkDiagonal
-    }
-      break;
-
-    case 'r': // rook
-    case 'R':
-    case 'b': // bishop
-    case 'B':
-    case 'q': // queen
-    case 'Q':
-    {
-      const int8_t offsets[8] =    {-8, 1, 8, -1, -7, 9, -9, 7};
-      const int8_t columnDirs[8] = { 0, 1, 0, -1,  1, 1, -1,-1};
-
-      uint8_t from = (piece == 'b' || piece == 'B') * 4;
-      uint8_t to = 4 + (piece != 'r' && piece != 'R') * 4;
-
-      for (uint8_t i = from; i < to; ++i)
-      {
-        int8_t offset = offsets[i];
-        int8_t columnDir = columnDirs[i];
-        int8_t square = pieceSquare;
-        int8_t col = horizontalPosition;
-
-        while (1)
-        {
-          square += offset;
-          col += columnDir;
-
-          if (square < 0 || square > 63 || col < 0 || col > 7)
-            break;
-
-          char squareC = board[square];
-
-          if (squareC == '.')
-            SCL_squareSetAdd(result,square);
-          else
-          {
-            if (SCL_pieceIsWhite(squareC) != isWhite)
-              SCL_squareSetAdd(result,square);
-
-            break;
-          }
-        }
+        if (board[square2] == '.')
+          SCL_squareSetAdd(result, square2);
       }
     }
-      break;
 
-    case 'n': // knight
-    case 'N':
+#define checkDiagonal(hor, add)                     \
+  if (horizontalPosition != hor)                    \
+  {                                                 \
+    uint8_t square2 = square + add;                 \
+    char c = board[square2];                        \
+    if (c != '.' && SCL_pieceIsWhite(c) != isWhite) \
+      SCL_squareSetAdd(result, square2);            \
+  }
+
+    // diagonal moves
+    checkDiagonal(0, -1)
+        checkDiagonal(7, 1)
+
+            uint8_t enPassantRow = 4;
+    uint8_t enemyPawn = 'p';
+
+    if (piece == 'p')
     {
-      const int8_t offsets[4] = {6, 10, 15, 17};
-      const int8_t columnsMinus[4] = {2,-2,1,-1};
-      const int8_t columnsPlus[4] = {-2,2,-1,1};
-      const int8_t *off, *col;
+      enPassantRow = 3;
+      enemyPawn = 'P';
+    }
 
-      #define checkOffsets(op,comp,limit,dir)\
-        off = offsets;\
-        col = columns ## dir;\
-        for (uint8_t i = 0; i < 4; ++i, ++off, ++col)\
-        {\
-          int8_t square = pieceSquare op (*off);\
-          if (square comp limit) /* out of board? */\
-            break;\
-          int8_t horizontalCheck = horizontalPosition + (*col);\
-          if (horizontalCheck < 0 || horizontalCheck >= 8)\
-            continue;\
-          char squareC = board[square];\
-          if ((squareC == '.') || (SCL_pieceIsWhite(squareC) != isWhite))\
-            SCL_squareSetAdd(result,square);\
+    // en-passant moves
+    if (verticalPosition == enPassantRow)
+    {
+      uint8_t enPassantColumn = board[SCL_BOARD_ENPASSANT_CASTLE_BYTE] & 0x0f;
+      uint8_t column = pieceSquare % 8;
+
+      for (int8_t offset = -1; offset < 2; offset += 2)
+        if ((enPassantColumn == column + offset) &&
+            (board[pieceSquare + offset] == enemyPawn))
+        {
+          SCL_squareSetAdd(result, pieceSquare + pawnOffset + offset);
+          break;
         }
+    }
 
-      checkOffsets(-,<,0,Minus)
-      checkOffsets(+,>=,SCL_BOARD_SQUARES,Plus)
+#undef checkDiagonal
+  }
+  break;
 
-      #undef checkOffsets
-    } 
-      break; 
+  case 'r': // rook
+  case 'R':
+  case 'b': // bishop
+  case 'B':
+  case 'q': // queen
+  case 'Q':
+  {
+    const int8_t offsets[8] = {-8, 1, 8, -1, -7, 9, -9, 7};
+    const int8_t columnDirs[8] = {0, 1, 0, -1, 1, 1, -1, -1};
 
-    case 'k': // king
-    case 'K':
+    uint8_t from = (piece == 'b' || piece == 'B') * 4;
+    uint8_t to = 4 + (piece != 'r' && piece != 'R') * 4;
+
+    for (uint8_t i = from; i < to; ++i)
     {
-      uint8_t verticalPosition = pieceSquare / 8;
+      int8_t offset = offsets[i];
+      int8_t columnDir = columnDirs[i];
+      int8_t square = pieceSquare;
+      int8_t col = horizontalPosition;
 
-      uint8_t
+      while (1)
+      {
+        square += offset;
+        col += columnDir;
+
+        if (square < 0 || square > 63 || col < 0 || col > 7)
+          break;
+
+        char squareC = board[square];
+
+        if (squareC == '.')
+          SCL_squareSetAdd(result, square);
+        else
+        {
+          if (SCL_pieceIsWhite(squareC) != isWhite)
+            SCL_squareSetAdd(result, square);
+
+          break;
+        }
+      }
+    }
+  }
+  break;
+
+  case 'n': // knight
+  case 'N':
+  {
+    const int8_t offsets[4] = {6, 10, 15, 17};
+    const int8_t columnsMinus[4] = {2, -2, 1, -1};
+    const int8_t columnsPlus[4] = {-2, 2, -1, 1};
+    const int8_t *off, *col;
+
+#define checkOffsets(op, comp, limit, dir)                          \
+  off = offsets;                                                    \
+  col = columns##dir;                                               \
+  for (uint8_t i = 0; i < 4; ++i, ++off, ++col)                     \
+  {                                                                 \
+    int8_t square = pieceSquare op(*off);                           \
+    if (square comp limit) /* out of board? */                      \
+      break;                                                        \
+    int8_t horizontalCheck = horizontalPosition + (*col);           \
+    if (horizontalCheck < 0 || horizontalCheck >= 8)                \
+      continue;                                                     \
+    char squareC = board[square];                                   \
+    if ((squareC == '.') || (SCL_pieceIsWhite(squareC) != isWhite)) \
+      SCL_squareSetAdd(result, square);                             \
+  }
+
+    checkOffsets(-, <, 0, Minus)
+        checkOffsets(+, >=, SCL_BOARD_SQUARES, Plus)
+
+#undef checkOffsets
+  }
+  break;
+
+  case 'k': // king
+  case 'K':
+  {
+    uint8_t verticalPosition = pieceSquare / 8;
+
+    uint8_t
         u = verticalPosition != 0,
         d = verticalPosition != 7,
         l = horizontalPosition != 0,
         r = horizontalPosition != 7;
 
-      uint8_t square2 = pieceSquare - 9;
+    uint8_t square2 = pieceSquare - 9;
 
-      #define checkSquare(cond,add) \
-        if (cond && ((board[square2] == '.') || \
-            (SCL_pieceIsWhite(board[square2])) != isWhite))\
-          SCL_squareSetAdd(result,square2);\
-        square2 += add;
+#define checkSquare(cond, add)                                 \
+  if (cond && ((board[square2] == '.') ||                      \
+               (SCL_pieceIsWhite(board[square2])) != isWhite)) \
+    SCL_squareSetAdd(result, square2);                         \
+  square2 += add;
 
-      checkSquare(l && u,1)
-      checkSquare(u,1)
-      checkSquare(r && u,6)
-      checkSquare(l,2)
-      checkSquare(r,6)
-      checkSquare(l && d,1)
-      checkSquare(d,1)
-      checkSquare(r && d,0)
+    checkSquare(l && u, 1)
+        checkSquare(u, 1)
+            checkSquare(r && u, 6)
+                checkSquare(l, 2)
+                    checkSquare(r, 6)
+                        checkSquare(l && d, 1)
+                            checkSquare(d, 1)
+                                checkSquare(r && d, 0)
 
-      #undef checkSquare
+#undef checkSquare
 
-      // castling:
+        // castling:
 
-      if (checkCastling)
+        if (checkCastling)
+    {
+      uint8_t bitShift = 4 + 2 * (!isWhite);
+
+      if ((board[SCL_BOARD_ENPASSANT_CASTLE_BYTE] & (0x03 << bitShift)) &&
+          !SCL_boardSquareAttacked(board, pieceSquare, !isWhite)) // no check?
       {
-        uint8_t bitShift = 4 + 2 * (!isWhite);
-
-        if ((board[SCL_BOARD_ENPASSANT_CASTLE_BYTE] & (0x03 << bitShift)) &&
-          !SCL_boardSquareAttacked(board,pieceSquare,!isWhite)) // no check?
-        { 
 #if !SCL_960_CASTLING
-          // short castle:
-          pieceSquare++;
-            
-          if ((board[SCL_BOARD_ENPASSANT_CASTLE_BYTE] & (0x01 << bitShift)) &&
-              (board[pieceSquare] == '.') &&
-              (board[pieceSquare + 1] == '.') &&
-              (board[pieceSquare + 2] == SCL_pieceToColor('r',isWhite)) &&
-              !SCL_boardSquareAttacked(board,pieceSquare,!isWhite))
-            SCL_squareSetAdd(result,pieceSquare + 1);
+        // short castle:
+        pieceSquare++;
 
-          /* note: don't check the final square for check, it will potentially
-             be removed later (can't end up in check) */
+        if ((board[SCL_BOARD_ENPASSANT_CASTLE_BYTE] & (0x01 << bitShift)) &&
+            (board[pieceSquare] == '.') &&
+            (board[pieceSquare + 1] == '.') &&
+            (board[pieceSquare + 2] == SCL_pieceToColor('r', isWhite)) &&
+            !SCL_boardSquareAttacked(board, pieceSquare, !isWhite))
+          SCL_squareSetAdd(result, pieceSquare + 1);
 
-          // long castle:
-          pieceSquare -= 2;
+        /* note: don't check the final square for check, it will potentially
+           be removed later (can't end up in check) */
 
-          if ((board[SCL_BOARD_ENPASSANT_CASTLE_BYTE] & (0x02 << bitShift)) &&
-              (board[pieceSquare] == '.') &&
-              (board[pieceSquare - 1] == '.') &&
-              (board[pieceSquare - 2] == '.') &&
-              (board[pieceSquare - 3] == SCL_pieceToColor('r',isWhite)) &&
-              !SCL_boardSquareAttacked(board,pieceSquare,!isWhite))
-            SCL_squareSetAdd(result,pieceSquare - 1);
+        // long castle:
+        pieceSquare -= 2;
+
+        if ((board[SCL_BOARD_ENPASSANT_CASTLE_BYTE] & (0x02 << bitShift)) &&
+            (board[pieceSquare] == '.') &&
+            (board[pieceSquare - 1] == '.') &&
+            (board[pieceSquare - 2] == '.') &&
+            (board[pieceSquare - 3] == SCL_pieceToColor('r', isWhite)) &&
+            !SCL_boardSquareAttacked(board, pieceSquare, !isWhite))
+          SCL_squareSetAdd(result, pieceSquare - 1);
 #else // 960 castling
-          for (int i = 0; i < 2; ++i) // short and long
-            if (board[SCL_BOARD_ENPASSANT_CASTLE_BYTE] & ((i + 1) << bitShift))
-            {
-              uint8_t 
+        for (int i = 0; i < 2; ++i) // short and long
+          if (board[SCL_BOARD_ENPASSANT_CASTLE_BYTE] & ((i + 1) << bitShift))
+          {
+            uint8_t
                 rookPos = board[SCL_BOARD_EXTRA_BYTE] >> 3,
                 targetPos = 5;
 
-              if (i == 1)
-              {
-                rookPos = board[SCL_BOARD_EXTRA_BYTE] & 0x07,
-                targetPos = 3;
-              }
-
-              if (!isWhite)
-              {
-                rookPos += 56;
-                targetPos += 56;
-              }
-
-              uint8_t ok = board[rookPos] == SCL_pieceToColor('r',isWhite);
-
-              if (!ok)
-                continue;
-
-              int8_t inc = 1 - 2 * (targetPos > rookPos);
-
-              while (targetPos != rookPos) // check vacant squares for the rook
-              {
-                if (board[targetPos] != '.' && 
-                    targetPos != pieceSquare)
-                {
-                  ok = 0;
-                  break;
-                }
-
-                targetPos += inc;
-              }
-
-              if (!ok) 
-                continue;
-
-              targetPos = i == 0 ? 6 : 2;
-
-              if (!isWhite)
-                targetPos += 56;
-
-              inc = 1 - 2 * (targetPos > pieceSquare);
-
-              while (targetPos != pieceSquare) // check squares for the king
-              {
-                if ((board[targetPos] != '.' && 
-                     targetPos != rookPos) ||
-                     SCL_boardSquareAttacked(board,targetPos,!isWhite))
-                {
-                  ok = 0;
-                  break;
-                }
-
-                targetPos += inc;
-              }
-
-              if (ok)
-                SCL_squareSetAdd(result,rookPos);
+            if (i == 1)
+            {
+              rookPos = board[SCL_BOARD_EXTRA_BYTE] & 0x07,
+              targetPos = 3;
             }
+
+            if (!isWhite)
+            {
+              rookPos += 56;
+              targetPos += 56;
+            }
+
+            uint8_t ok = board[rookPos] == SCL_pieceToColor('r', isWhite);
+
+            if (!ok)
+              continue;
+
+            int8_t inc = 1 - 2 * (targetPos > rookPos);
+
+            while (targetPos != rookPos) // check vacant squares for the rook
+            {
+              if (board[targetPos] != '.' &&
+                  targetPos != pieceSquare)
+              {
+                ok = 0;
+                break;
+              }
+
+              targetPos += inc;
+            }
+
+            if (!ok)
+              continue;
+
+            targetPos = i == 0 ? 6 : 2;
+
+            if (!isWhite)
+              targetPos += 56;
+
+            inc = 1 - 2 * (targetPos > pieceSquare);
+
+            while (targetPos != pieceSquare) // check squares for the king
+            {
+              if ((board[targetPos] != '.' &&
+                   targetPos != rookPos) ||
+                  SCL_boardSquareAttacked(board, targetPos, !isWhite))
+              {
+                ok = 0;
+                break;
+              }
+
+              targetPos += inc;
+            }
+
+            if (ok)
+              SCL_squareSetAdd(result, rookPos);
+          }
 #endif
-        }
       }
     }
-      break;
+  }
+  break;
 
-    default:
-      break;
+  default:
+    break;
   }
 }
 
@@ -2019,21 +2075,52 @@ void SCL_printSquareUTF8(uint8_t square, SCL_PutCharFunction putCharFunc)
 
   switch (square)
   {
-    case 'r': val = 0x9c99e200; break;
-    case 'n': val = 0x9e99e200; break;
-    case 'b': val = 0x9d99e200; break;
-    case 'q': val = 0x9b99e200; break;
-    case 'k': val = 0x9a99e200; break;
-    case 'p': val = 0x9f99e200; break;
-    case 'R': val = 0x9699e200; break;
-    case 'N': val = 0x9899e200; break;
-    case 'B': val = 0x9799e200; break;
-    case 'Q': val = 0x9599e200; break;
-    case 'K': val = 0x9499e200; break;
-    case 'P': val = 0x9999e200; break;
-    case '.': val = 0x9296e200; break;
-    case ',': val = 0x9196e200; break;
-    default:  putCharFunc(square); return; break;
+  case 'r':
+    val = 0x9c99e200;
+    break;
+  case 'n':
+    val = 0x9e99e200;
+    break;
+  case 'b':
+    val = 0x9d99e200;
+    break;
+  case 'q':
+    val = 0x9b99e200;
+    break;
+  case 'k':
+    val = 0x9a99e200;
+    break;
+  case 'p':
+    val = 0x9f99e200;
+    break;
+  case 'R':
+    val = 0x9699e200;
+    break;
+  case 'N':
+    val = 0x9899e200;
+    break;
+  case 'B':
+    val = 0x9799e200;
+    break;
+  case 'Q':
+    val = 0x9599e200;
+    break;
+  case 'K':
+    val = 0x9499e200;
+    break;
+  case 'P':
+    val = 0x9999e200;
+    break;
+  case '.':
+    val = 0x9296e200;
+    break;
+  case ',':
+    val = 0x9196e200;
+    break;
+  default:
+    putCharFunc(square);
+    return;
+    break;
   }
 
   uint8_t count = 4;
@@ -2053,9 +2140,9 @@ void SCL_printSquareUTF8(uint8_t square, SCL_PutCharFunction putCharFunc)
 }
 
 void SCL_boardGetMoves(
-  SCL_Board board,
-  uint8_t pieceSquare,
-  SCL_SquareSet result)
+    SCL_Board board,
+    uint8_t pieceSquare,
+    SCL_SquareSet result)
 {
   SCL_SquareSet allMoves;
 
@@ -2064,18 +2151,18 @@ void SCL_boardGetMoves(
   for (uint8_t i = 0; i < 8; ++i)
     result[i] = 0;
 
-  SCL_boardGetPseudoMoves(board,pieceSquare,1,allMoves);
+  SCL_boardGetPseudoMoves(board, pieceSquare, 1, allMoves);
 
   // Now only keep moves that don't lead to one's check:
 
   SCL_SQUARE_SET_ITERATE_BEGIN(allMoves)
 
-    SCL_MoveUndo undo = SCL_boardMakeMove(board,pieceSquare,iteratedSquare,'q');
+  SCL_MoveUndo undo = SCL_boardMakeMove(board, pieceSquare, iteratedSquare, 'q');
 
-    if (!SCL_boardCheck(board,!SCL_boardWhitesTurn(board)))
-      SCL_squareSetAdd(result,iteratedSquare);
+  if (!SCL_boardCheck(board, !SCL_boardWhitesTurn(board)))
+    SCL_squareSetAdd(result, iteratedSquare);
 
-    SCL_boardUndoMove(board,undo);
+  SCL_boardUndoMove(board, undo);
 
   SCL_SQUARE_SET_ITERATE_END
 }
@@ -2103,20 +2190,29 @@ uint8_t SCL_boardDead(SCL_Board board)
 
     switch (c)
     {
-      case 'n': material |= 0x01; break;
-      case 'N': material |= 0x10; break;
-      case 'b': material |= (0x02 << (!SCL_squareIsWhite(i))); break;
-      case 'B': material |= (0x20 << (!SCL_squareIsWhite(i))); break;
-      case 'p':
-      case 'P': 
-      case 'r':
-      case 'R': 
-      case 'q':
-      case 'Q': 
-        return 0; // REMOVE later if more complex check are performed
-        break;
+    case 'n':
+      material |= 0x01;
+      break;
+    case 'N':
+      material |= 0x10;
+      break;
+    case 'b':
+      material |= (0x02 << (!SCL_squareIsWhite(i)));
+      break;
+    case 'B':
+      material |= (0x20 << (!SCL_squareIsWhite(i)));
+      break;
+    case 'p':
+    case 'P':
+    case 'r':
+    case 'R':
+    case 'q':
+    case 'Q':
+      return 0; // REMOVE later if more complex check are performed
+      break;
 
-      default: break;
+    default:
+      break;
     }
 
     p++;
@@ -2126,21 +2222,20 @@ uint8_t SCL_boardDead(SCL_Board board)
 
   // possible combinations of insufficient material:
 
-  return
-    (material == 0x00) || // king vs king
-    (material == 0x01) || // king and knight vs king 
-    (material == 0x10) || // king and knight vs king
-    (material == 0x02) || // king and bishop vs king
-    (material == 0x20) || // king and bishop vs king
-    (material == 0x04) || // king and bishop vs king
-    (material == 0x40) || // king and bishop vs king
-    (material == 0x22) || // king and bishop vs king and bishop (same color)
-    (material == 0x44);   // king and bishop vs king and bishop (same color)
+  return (material == 0x00) || // king vs king
+         (material == 0x01) || // king and knight vs king
+         (material == 0x10) || // king and knight vs king
+         (material == 0x02) || // king and bishop vs king
+         (material == 0x20) || // king and bishop vs king
+         (material == 0x04) || // king and bishop vs king
+         (material == 0x40) || // king and bishop vs king
+         (material == 0x22) || // king and bishop vs king and bishop (same color)
+         (material == 0x44);   // king and bishop vs king and bishop (same color)
 }
 
 uint8_t SCL_boardGetPosition(SCL_Board board)
 {
-  uint8_t check = SCL_boardCheck(board,SCL_boardWhitesTurn(board)); 
+  uint8_t check = SCL_boardCheck(board, SCL_boardWhitesTurn(board));
   uint8_t moves = SCL_boardMovePossible(board);
 
   if (check)
@@ -2154,8 +2249,8 @@ uint8_t SCL_boardGetPosition(SCL_Board board)
   return SCL_POSITION_NORMAL;
 }
 
-uint8_t SCL_stringToMove(const char *moveString, uint8_t *resultFrom, 
-  uint8_t *resultTo, char *resultPromotion)
+uint8_t SCL_stringToMove(const char *moveString, uint8_t *resultFrom,
+                         uint8_t *resultTo, char *resultPromotion)
 {
   char c;
 
@@ -2164,21 +2259,21 @@ uint8_t SCL_stringToMove(const char *moveString, uint8_t *resultFrom,
   for (uint8_t i = 0; i < 2; ++i)
   {
     c = *moveString;
-  
+
     *dst = (c >= 'a') ? (c - 'a') : (c - 'A');
 
     if (*dst > 7)
       return 0;
 
-    moveString++;    
+    moveString++;
     c = *moveString;
-  
+
     *dst += 8 * (c - '1');
-  
+
     if (*dst > 63)
       return 0;
-  
-    moveString++;    
+
+    moveString++;
 
     dst = resultTo;
   }
@@ -2190,25 +2285,37 @@ uint8_t SCL_stringToMove(const char *moveString, uint8_t *resultFrom,
 
   switch (c)
   {
-    case 'N': case 'n': *resultPromotion = 'n'; break;
-    case 'B': case 'b': *resultPromotion = 'b'; break;
-    case 'R': case 'r': *resultPromotion = 'r'; break;
-    case 'Q': case 'q':
-    default: *resultPromotion = 'q'; break;
+  case 'N':
+  case 'n':
+    *resultPromotion = 'n';
+    break;
+  case 'B':
+  case 'b':
+    *resultPromotion = 'b';
+    break;
+  case 'R':
+  case 'r':
+    *resultPromotion = 'r';
+    break;
+  case 'Q':
+  case 'q':
+  default:
+    *resultPromotion = 'q';
+    break;
   }
-  
+
   return 1;
 }
 
 void SCL_printBoard(
-  SCL_Board board,
-  SCL_PutCharFunction putCharFunc,
-  SCL_SquareSet highlightSquares,
-  uint8_t selectSquare,
-  uint8_t format,
-  uint8_t offset,
-  uint8_t labels,
-  uint8_t blackDown)
+    SCL_Board board,
+    SCL_PutCharFunction putCharFunc,
+    SCL_SquareSet highlightSquares,
+    uint8_t selectSquare,
+    uint8_t format,
+    uint8_t offset,
+    uint8_t labels,
+    uint8_t blackDown)
 {
   if (labels)
   {
@@ -2222,11 +2329,11 @@ void SCL_printBoard(
         putCharFunc(' ');
 
       putCharFunc(blackDown ? ('H' - i) : ('A' + i));
-    }     
+    }
 
     putCharFunc('\n');
-  }   
- 
+  }
+
   int8_t i = 7;
   int8_t add = 1;
 
@@ -2253,77 +2360,75 @@ void SCL_printBoard(
     {
       switch (format)
       {
-        case SCL_PRINT_FORMAT_COMPACT:
-          putCharFunc(
+      case SCL_PRINT_FORMAT_COMPACT:
+        putCharFunc(
             (*square == '.') ? (
-            ((i != selectSquare) ?
-              (!SCL_squareSetContains(highlightSquares,i) ? *square : '*')
-              : '#')) : *square);
-          break;
+                                   ((i != selectSquare) ? (!SCL_squareSetContains(highlightSquares, i) ? *square : '*')
+                                                        : '#'))
+                             : *square);
+        break;
 
-        case SCL_PRINT_FORMAT_UTF8:
+      case SCL_PRINT_FORMAT_UTF8:
+      {
+        char squareChar = SCL_squareIsWhite(i) ? '.' : ',';
+        char pieceChar = (*square == '.') ? squareChar : *square;
+
+        if (i == selectSquare)
         {
-          char squareChar = SCL_squareIsWhite(i) ? '.' : ',';
-          char pieceChar = (*square == '.') ? squareChar : *square;
+          putCharFunc('(');
 
-          if (i == selectSquare)
-          {
-            putCharFunc('(');
-
-            if (*square == '.')
-              putCharFunc(')');
-            else
-              SCL_printSquareUTF8(pieceChar,putCharFunc);
-          }
-          else if (!SCL_squareSetContains(highlightSquares,i))
-          {
-            SCL_printSquareUTF8(squareChar,putCharFunc);
-            SCL_printSquareUTF8(pieceChar,putCharFunc);
-          }
+          if (*square == '.')
+            putCharFunc(')');
           else
-          {
-            putCharFunc('[');
-
-            if (*square == '.')
-              putCharFunc(']');
-            else
-              SCL_printSquareUTF8(*square,putCharFunc);
-          }
-
-          break;
+            SCL_printSquareUTF8(pieceChar, putCharFunc);
         }
-
-        case SCL_PRINT_FORMAT_COMPACT_UTF8:
-          SCL_printSquareUTF8(
-            (*square == '.') ? (
-              SCL_squareSetContains(highlightSquares,i) ? '*' :
-              (i == selectSquare ? '#' : ((SCL_squareIsWhite(i) ? '.' : ',')))
-            ) : *square,putCharFunc);
-          break;
-
-        case SCL_PRINT_FORMAT_NORMAL:
-        default:
+        else if (!SCL_squareSetContains(highlightSquares, i))
         {
-          uint8_t c = *square;
-
-          char squareColor = SCL_squareIsWhite(i) ? ' ' : ':';
-
-          putCharFunc((i != selectSquare) ?
-            (!SCL_squareSetContains(highlightSquares,i) ?
-            squareColor : '#') : '@');
-
-          putCharFunc(c == '.' ? squareColor : *square);
-          break;
+          SCL_printSquareUTF8(squareChar, putCharFunc);
+          SCL_printSquareUTF8(pieceChar, putCharFunc);
         }
+        else
+        {
+          putCharFunc('[');
+
+          if (*square == '.')
+            putCharFunc(']');
+          else
+            SCL_printSquareUTF8(*square, putCharFunc);
+        }
+
+        break;
+      }
+
+      case SCL_PRINT_FORMAT_COMPACT_UTF8:
+        SCL_printSquareUTF8(
+            (*square == '.') ? (
+                                   SCL_squareSetContains(highlightSquares, i) ? '*' : (i == selectSquare ? '#' : ((SCL_squareIsWhite(i) ? '.' : ','))))
+                             : *square,
+            putCharFunc);
+        break;
+
+      case SCL_PRINT_FORMAT_NORMAL:
+      default:
+      {
+        uint8_t c = *square;
+
+        char squareColor = SCL_squareIsWhite(i) ? ' ' : ':';
+
+        putCharFunc((i != selectSquare) ? (!SCL_squareSetContains(highlightSquares, i) ? squareColor : '#') : '@');
+
+        putCharFunc(c == '.' ? squareColor : *square);
+        break;
+      }
       }
 
       i -= add;
       square -= add;
     }
-        
+
     putCharFunc('\n');
 
-    i += add * 16;  
+    i += add * 16;
   } // for rows
 }
 
@@ -2331,19 +2436,32 @@ int16_t SCL_pieceValuePositive(char piece)
 {
   switch (piece)
   {
-    case 'p':
-    case 'P': return SCL_VALUE_PAWN; break;
-    case 'n':
-    case 'N': return SCL_VALUE_KNIGHT; break;
-    case 'b':
-    case 'B': return SCL_VALUE_BISHOP; break;
-    case 'r':
-    case 'R': return SCL_VALUE_ROOK; break;
-    case 'q':
-    case 'Q': return SCL_VALUE_QUEEN; break;
-    case 'k':
-    case 'K': return SCL_VALUE_KING; break;
-    default: break;
+  case 'p':
+  case 'P':
+    return SCL_VALUE_PAWN;
+    break;
+  case 'n':
+  case 'N':
+    return SCL_VALUE_KNIGHT;
+    break;
+  case 'b':
+  case 'B':
+    return SCL_VALUE_BISHOP;
+    break;
+  case 'r':
+  case 'R':
+    return SCL_VALUE_ROOK;
+    break;
+  case 'q':
+  case 'Q':
+    return SCL_VALUE_QUEEN;
+    break;
+  case 'k':
+  case 'K':
+    return SCL_VALUE_KING;
+    break;
+  default:
+    break;
   }
 
   return 0;
@@ -2353,19 +2471,44 @@ int16_t SCL_pieceValue(char piece)
 {
   switch (piece)
   {
-    case 'P': return SCL_VALUE_PAWN; break;
-    case 'N': return SCL_VALUE_KNIGHT; break;
-    case 'B': return SCL_VALUE_BISHOP; break;
-    case 'R': return SCL_VALUE_ROOK; break;
-    case 'Q': return SCL_VALUE_QUEEN; break;
-    case 'K': return SCL_VALUE_KING; break;
-    case 'p': return -1 * SCL_VALUE_PAWN; break;
-    case 'n': return -1 * SCL_VALUE_KNIGHT; break;
-    case 'b': return -1 * SCL_VALUE_BISHOP; break;
-    case 'r': return -1 * SCL_VALUE_ROOK; break;
-    case 'q': return -1 * SCL_VALUE_QUEEN; break;
-    case 'k': return -1 * SCL_VALUE_KING; break;
-    default: break;
+  case 'P':
+    return SCL_VALUE_PAWN;
+    break;
+  case 'N':
+    return SCL_VALUE_KNIGHT;
+    break;
+  case 'B':
+    return SCL_VALUE_BISHOP;
+    break;
+  case 'R':
+    return SCL_VALUE_ROOK;
+    break;
+  case 'Q':
+    return SCL_VALUE_QUEEN;
+    break;
+  case 'K':
+    return SCL_VALUE_KING;
+    break;
+  case 'p':
+    return -1 * SCL_VALUE_PAWN;
+    break;
+  case 'n':
+    return -1 * SCL_VALUE_KNIGHT;
+    break;
+  case 'b':
+    return -1 * SCL_VALUE_BISHOP;
+    break;
+  case 'r':
+    return -1 * SCL_VALUE_ROOK;
+    break;
+  case 'q':
+    return -1 * SCL_VALUE_QUEEN;
+    break;
+  case 'k':
+    return -1 * SCL_VALUE_KING;
+    break;
+  default:
+    break;
   }
 
   return 0;
@@ -2400,20 +2543,19 @@ int16_t _SCL_rateKingEndgamePosition(uint8_t position)
 int16_t SCL_boardEvaluateStatic(SCL_Board board)
 {
   uint8_t position = SCL_boardGetPosition(board);
-  
-  int16_t total = 0;                        
+
+  int16_t total = 0;
 
   switch (position)
   {
-    case SCL_POSITION_MATE:
-      return SCL_boardWhitesTurn(board) ? 
-        -1 * SCL_EVALUATION_MAX_SCORE : SCL_EVALUATION_MAX_SCORE;
-      break;
+  case SCL_POSITION_MATE:
+    return SCL_boardWhitesTurn(board) ? -1 * SCL_EVALUATION_MAX_SCORE : SCL_EVALUATION_MAX_SCORE;
+    break;
 
-    case SCL_POSITION_STALEMATE:
-    case SCL_POSITION_DEAD:
-      return 0;
-      break;
+  case SCL_POSITION_STALEMATE:
+  case SCL_POSITION_DEAD:
+    return 0;
+    break;
 
     /*
       main points are assigned as follows:
@@ -2438,183 +2580,182 @@ int16_t SCL_boardEvaluateStatic(SCL_Board board)
         - center closeness (endgame): up to 2 * KING_CENTERNESS points for
           being closer to center
       - non-doubled pawns: PAWN_NON_DOUBLE_BONUS points for each pawn without
-        same color pawn directly in front of it 
+        same color pawn directly in front of it
       - pawn structure: PAWN_PAIR_BONUS points for each pawn guarding own pawn
       - advancing pawns: 1 point for each pawn's rank in its move
         direction
     */
 
-    case SCL_POSITION_CHECK:
-      total += SCL_boardWhitesTurn(board) ? -1 * CHECK_BONUS : CHECK_BONUS;
-    case SCL_POSITION_NORMAL:
-    default:
+  case SCL_POSITION_CHECK:
+    total += SCL_boardWhitesTurn(board) ? -1 * CHECK_BONUS : CHECK_BONUS;
+  case SCL_POSITION_NORMAL:
+  default:
+  {
+    SCL_SquareSet moves;
+
+    const char *p = board;
+
+    int16_t positiveMaterial = 0;
+    uint8_t endgame = 0;
+
+    // first count material to see if this is endgame or not
+    for (uint8_t i = 0; i < SCL_BOARD_SQUARES; ++i, ++p)
     {
-      SCL_SquareSet moves;
+      char s = *p;
 
-      const char *p = board;
-
-      int16_t positiveMaterial = 0;
-      uint8_t endgame = 0;
-
-      // first count material to see if this is endgame or not
-      for (uint8_t i = 0; i < SCL_BOARD_SQUARES; ++i, ++p)
+      if (s != '.')
       {
-        char s = *p;
-
-        if (s != '.')
-        {
-          positiveMaterial += SCL_pieceValuePositive(s);
-          total += SCL_pieceValue(s);
-        }
+        positiveMaterial += SCL_pieceValuePositive(s);
+        total += SCL_pieceValue(s);
       }
+    }
 
-      endgame = positiveMaterial <= SCL_ENDGAME_MATERIAL_LIMIT;
+    endgame = positiveMaterial <= SCL_ENDGAME_MATERIAL_LIMIT;
 
-      p = board;
+    p = board;
 
-      for (uint8_t i = 0; i < SCL_BOARD_SQUARES; ++i, ++p)
+    for (uint8_t i = 0; i < SCL_BOARD_SQUARES; ++i, ++p)
+    {
+      char s = *p;
+
+      if (s != '.')
       {
-        char s = *p;
+        uint8_t white = SCL_pieceIsWhite(s);
 
-        if (s != '.')
+        switch (s)
         {
-          uint8_t white = SCL_pieceIsWhite(s);
-
-          switch (s)
+        case 'k': // king safety
+          if (endgame)
+            total -= _SCL_rateKingEndgamePosition(i);
+          else if (i >= 56)
           {
-            case 'k': // king safety
-              if (endgame)
-                total -= _SCL_rateKingEndgamePosition(i);
-              else if (i >= 56)
-              {
-                total -= KING_BACK_BONUS;
+            total -= KING_BACK_BONUS;
 
-                if (i != 59)
-                {
-                  total -= KING_NOT_CENTER_BONUS;
-
-                  if (i >= 62 || i <= 58)
-                    total -= KING_CASTLED_BONUS;
-                }
-              }
-            break;
-
-            case 'K':
-              if (endgame)
-                total += _SCL_rateKingEndgamePosition(i);
-              else if (i <= 7)
-              {
-                total += KING_BACK_BONUS;
-
-                if (i != 3)
-                {
-                  total += KING_NOT_CENTER_BONUS;
-
-                  if (i <= 2 || i >= 6)
-                    total += KING_CASTLED_BONUS;
-                }
-              }
-            break;
-
-            case 'P': // pawns
-            case 'p':
+            if (i != 59)
             {
-              int8_t rank = i / 8;
+              total -= KING_NOT_CENTER_BONUS;
 
-              if (rank != 0 && rank != 7)
-              {
-                if (s == 'P')
-                {
-                  total += rank;
-
-                  char *tmp = board + i + 8;
-
-                  if (*tmp != 'P')
-                    total += PAWN_NON_DOUBLE_BONUS;
-
-                  if (i % 8 != 7)
-                  {
-                    tmp++;
-
-                    if (*tmp == 'P')
-                      total += PAWN_PAIR_BONUS;
-
-                    if (*(tmp - 16) == 'P')
-                      total += PAWN_PAIR_BONUS;
-                  }
-                }
-                else
-                {
-                  total -= 7 - rank;
-
-                  char *tmp = board + i - 8;
-
-                  if (*tmp != 'p')
-                    total -= PAWN_NON_DOUBLE_BONUS;
-
-                  if (i % 8 != 7)
-                  {
-                    tmp += 17;
-
-                    if (*tmp == 'p')
-                      total -= PAWN_PAIR_BONUS;
-
-                    if (*(tmp - 16) == 'p')
-                      total -= PAWN_PAIR_BONUS;
-                  }
-                }
-              }
-           
-              break;
+              if (i >= 62 || i <= 58)
+                total -= KING_CASTLED_BONUS;
             }
+          }
+          break;
 
-            default: break;
+        case 'K':
+          if (endgame)
+            total += _SCL_rateKingEndgamePosition(i);
+          else if (i <= 7)
+          {
+            total += KING_BACK_BONUS;
+
+            if (i != 3)
+            {
+              total += KING_NOT_CENTER_BONUS;
+
+              if (i <= 2 || i >= 6)
+                total += KING_CASTLED_BONUS;
+            }
+          }
+          break;
+
+        case 'P': // pawns
+        case 'p':
+        {
+          int8_t rank = i / 8;
+
+          if (rank != 0 && rank != 7)
+          {
+            if (s == 'P')
+            {
+              total += rank;
+
+              char *tmp = board + i + 8;
+
+              if (*tmp != 'P')
+                total += PAWN_NON_DOUBLE_BONUS;
+
+              if (i % 8 != 7)
+              {
+                tmp++;
+
+                if (*tmp == 'P')
+                  total += PAWN_PAIR_BONUS;
+
+                if (*(tmp - 16) == 'P')
+                  total += PAWN_PAIR_BONUS;
+              }
+            }
+            else
+            {
+              total -= 7 - rank;
+
+              char *tmp = board + i - 8;
+
+              if (*tmp != 'p')
+                total -= PAWN_NON_DOUBLE_BONUS;
+
+              if (i % 8 != 7)
+              {
+                tmp += 17;
+
+                if (*tmp == 'p')
+                  total -= PAWN_PAIR_BONUS;
+
+                if (*(tmp - 16) == 'p')
+                  total -= PAWN_PAIR_BONUS;
+              }
+            }
           }
 
-          if (i >= 27 && i <= 36 && (i >= 35 || i <= 28)) // center control
-            total += white ? CENTER_BONUS : (-1 * CENTER_BONUS);
-
-          // for performance we only take pseudo moves
-          SCL_boardGetPseudoMoves(board,i,0,moves);
-
-          if (SCL_squareSetSize(moves) >= 4) // mobility
-            total += white ? 
-              MOBILITY_BONUS : (-1 * MOBILITY_BONUS);
-
-          int16_t exchangeBonus = 0;
-
-          SCL_SQUARE_SET_ITERATE_BEGIN(moves)
-
-            if (board[iteratedSquare] != '.')
-            {
-              total += white ? 
-                ATTACK_BONUS : (- 1 * ATTACK_BONUS);
-
-              if (SCL_boardWhitesTurn(board) == white)
-              {
-                int16_t valueDiff = 
-                  SCL_pieceValuePositive(board[iteratedSquare]) - 
-                  SCL_pieceValuePositive(s);
-
-                valueDiff /= 4; // only take a fraction to favor taking
-
-                if (valueDiff > exchangeBonus)
-                  exchangeBonus = valueDiff;
-              }
-            }
-
-          SCL_SQUARE_SET_ITERATE_END
-
-          if (exchangeBonus != 0)
-            total += white ? exchangeBonus : -1 * exchangeBonus;
+          break;
         }
-      } // for each square
 
-      return total;
+        default:
+          break;
+        }
 
-      break;
+        if (i >= 27 && i <= 36 && (i >= 35 || i <= 28)) // center control
+          total += white ? CENTER_BONUS : (-1 * CENTER_BONUS);
 
-    } // normal position
+        // for performance we only take pseudo moves
+        SCL_boardGetPseudoMoves(board, i, 0, moves);
+
+        if (SCL_squareSetSize(moves) >= 4) // mobility
+          total += white ? MOBILITY_BONUS : (-1 * MOBILITY_BONUS);
+
+        int16_t exchangeBonus = 0;
+
+        SCL_SQUARE_SET_ITERATE_BEGIN(moves)
+
+        if (board[iteratedSquare] != '.')
+        {
+          total += white ? ATTACK_BONUS : (-1 * ATTACK_BONUS);
+
+          if (SCL_boardWhitesTurn(board) == white)
+          {
+            int16_t valueDiff =
+                SCL_pieceValuePositive(board[iteratedSquare]) -
+                SCL_pieceValuePositive(s);
+
+            valueDiff /= 4; // only take a fraction to favor taking
+
+            if (valueDiff > exchangeBonus)
+              exchangeBonus = valueDiff;
+          }
+        }
+
+        SCL_SQUARE_SET_ITERATE_END
+
+        if (exchangeBonus != 0)
+          total += white ? exchangeBonus : -1 * exchangeBonus;
+      }
+    } // for each square
+
+    return total;
+
+    break;
+
+  } // normal position
   } // switch
 
   return 0;
@@ -2639,7 +2780,7 @@ int8_t _SCL_depthHardLimit;
   (or -1) at which last capture happened, to implement capture extension.
 */
 int16_t _SCL_boardEvaluateDynamic(SCL_Board board, int8_t depth,
-  int16_t alphaBeta, int8_t takenSquare)
+                                  int16_t alphaBeta, int8_t takenSquare)
 {
 #if SCL_COUNT_EVALUATED_POSITIONS
   SCL_positionsEvaluated++;
@@ -2658,12 +2799,12 @@ int16_t _SCL_boardEvaluateDynamic(SCL_Board board, int8_t depth,
 
   if (!shouldCompute)
   {
-    /* here we do two extensions (deeper search): taking on a same square 
+    /* here we do two extensions (deeper search): taking on a same square
       (exchanges) and checks (good for mating and preventing mates): */
     extended =
-      (depth > _SCL_depthHardLimit) &&
-      (takenSquare >= 0 ||
-      (SCL_boardGetPosition(board) == SCL_POSITION_CHECK));
+        (depth > _SCL_depthHardLimit) &&
+        (takenSquare >= 0 ||
+         (SCL_boardGetPosition(board) == SCL_POSITION_CHECK));
 
     shouldCompute = extended;
   }
@@ -2674,7 +2815,7 @@ int16_t _SCL_boardEvaluateDynamic(SCL_Board board, int8_t depth,
 #endif
 
   if (shouldCompute &&
-    (positionType == SCL_POSITION_NORMAL || positionType == SCL_POSITION_CHECK))
+      (positionType == SCL_POSITION_NORMAL || positionType == SCL_POSITION_CHECK))
   {
 #if SCL_DEBUG_AI
     putchar('(');
@@ -2696,72 +2837,72 @@ int16_t _SCL_boardEvaluateDynamic(SCL_Board board, int8_t depth,
 
         SCL_squareSetClear(moves);
 
-        SCL_boardGetMoves(board,i,moves);
+        SCL_boardGetMoves(board, i, moves);
 
         if (!SCL_squareSetEmpty(moves))
         {
           SCL_SQUARE_SET_ITERATE_BEGIN(moves)
 
-            int8_t captureExtension = -1;
-            
-            if (board[iteratedSquare] != '.' &&   // takes a piece
-              (takenSquare == -1 ||               // extend on first taken sq. 
-              (extended && takenSquare != -1) ||  // ignore check extension
-              (iteratedSquare == takenSquare)))   // extend on same sq. taken
-              captureExtension = iteratedSquare;
+          int8_t captureExtension = -1;
 
-            SCL_MoveUndo undo = SCL_boardMakeMove(board,i,iteratedSquare,'q');
+          if (board[iteratedSquare] != '.' &&     // takes a piece
+              (takenSquare == -1 ||               // extend on first taken sq.
+               (extended && takenSquare != -1) || // ignore check extension
+               (iteratedSquare == takenSquare)))  // extend on same sq. taken
+            captureExtension = iteratedSquare;
 
-            uint8_t s0Dummy, s1Dummy;
-            char pDummy;
+          SCL_MoveUndo undo = SCL_boardMakeMove(board, i, iteratedSquare, 'q');
 
-            SCL_UNUSED(s0Dummy);
-            SCL_UNUSED(s1Dummy);
-            SCL_UNUSED(pDummy);
+          uint8_t s0Dummy, s1Dummy;
+          char pDummy;
+
+          SCL_UNUSED(s0Dummy);
+          SCL_UNUSED(s1Dummy);
+          SCL_UNUSED(pDummy);
 
 #if SCL_DEBUG_AI
-            if (debugFirst)
-              debugFirst = 0;
-            else
-              putchar(',');
+          if (debugFirst)
+            debugFirst = 0;
+          else
+            putchar(',');
 
-            if (extended)
-              putchar('*');
+          if (extended)
+            putchar('*');
 
-            printf("%s ",SCL_moveToString(board,i,iteratedSquare,'q',moveStr));
+          printf("%s ", SCL_moveToString(board, i, iteratedSquare, 'q', moveStr));
 #endif
 
-            int16_t value = _SCL_boardEvaluateDynamic(
-              board,
-              depth, // this is depth - 1, we decremented it
+          int16_t value = _SCL_boardEvaluateDynamic(
+                              board,
+                              depth, // this is depth - 1, we decremented it
 #if SCL_ALPHA_BETA
-              valueMultiply * bestMoveValue,
+                              valueMultiply * bestMoveValue,
 #else
-              0,
-#endif      
-              captureExtension
-              ) * valueMultiply;
+                              0,
+#endif
+                              captureExtension) *
+                          valueMultiply;
 
-            SCL_boardUndoMove(board,undo);
+          SCL_boardUndoMove(board, undo);
 
-            if (value > bestMoveValue) 
-            {
-              bestMoveValue = value;
+          if (value > bestMoveValue)
+          {
+            bestMoveValue = value;
 
 #if SCL_ALPHA_BETA
-              // alpha-beta pruning:
+            // alpha-beta pruning:
 
-              if (value > alphaBeta) // no, >= can't be here
-              {
-                end = 1;
-                iterationEnd = 1;
-              }
-#endif
+            if (value > alphaBeta) // no, >= can't be here
+            {
+              end = 1;
+              iterationEnd = 1;
             }
+#endif
+          }
 
           SCL_SQUARE_SET_ITERATE_END
         } // !squre set empty?
-      } // valid piece?
+      }   // valid piece?
 
       if (end)
         break;
@@ -2769,17 +2910,17 @@ int16_t _SCL_boardEvaluateDynamic(SCL_Board board, int8_t depth,
     } // for each square
 
 #if SCL_DEBUG_AI
-  putchar(')');
+    putchar(')');
 #endif
   }
   else // don't dive recursively, evaluate statically
   {
     bestMoveValue = valueMultiply *
-  #ifndef SCL_EVALUATION_FUNCTION
-      _SCL_staticEvaluationFunction(board);
-  #else
-      SCL_EVALUATION_FUNCTION(board);
-  #endif
+#ifndef SCL_EVALUATION_FUNCTION
+                    _SCL_staticEvaluationFunction(board);
+#else
+                    SCL_EVALUATION_FUNCTION(board);
+#endif
 
     /* For stalemate return the opposite value of the board, i.e. if the
        position is good for white, then stalemate is good for black and vice
@@ -2797,14 +2938,14 @@ int16_t _SCL_boardEvaluateDynamic(SCL_Board board, int8_t depth,
   bestMoveValue += bestMoveValue > _SCL_currentEval * valueMultiply ? -1 : 1;
 
 #if SCL_DEBUG_AI
-  printf("%d",bestMoveValue * valueMultiply);
+  printf("%d", bestMoveValue * valueMultiply);
 #endif
 
   return bestMoveValue * valueMultiply;
 }
 
 int16_t SCL_boardEvaluateDynamic(SCL_Board board, uint8_t baseDepth,
-  uint8_t extensionExtraDepth, SCL_StaticEvaluationFunction evalFunction)
+                                 uint8_t extensionExtraDepth, SCL_StaticEvaluationFunction evalFunction)
 {
   _SCL_staticEvaluationFunction = evalFunction;
   _SCL_currentEval = evalFunction(board);
@@ -2812,18 +2953,15 @@ int16_t SCL_boardEvaluateDynamic(SCL_Board board, uint8_t baseDepth,
   _SCL_depthHardLimit -= extensionExtraDepth;
 
   return _SCL_boardEvaluateDynamic(
-    board,
-    baseDepth,
-    SCL_boardWhitesTurn(board) ? 
-      SCL_EVALUATION_MAX_SCORE : (-1 * SCL_EVALUATION_MAX_SCORE),-1); 
+      board,
+      baseDepth,
+      SCL_boardWhitesTurn(board) ? SCL_EVALUATION_MAX_SCORE : (-1 * SCL_EVALUATION_MAX_SCORE), -1);
 }
 
 void SCL_boardRandomMove(SCL_Board board, SCL_RandomFunction randFunc,
-  uint8_t *squareFrom, uint8_t *squareTo, char *resultProm)
+                         uint8_t *squareFrom, uint8_t *squareTo, char *resultProm)
 {
-  *resultProm = (randFunc() < 128) ? 
-    ((randFunc() < 128) ? 'r' : 'n') : 
-    ((randFunc() < 128) ? 'b' : 'q');
+  *resultProm = (randFunc() < 128) ? ((randFunc() < 128) ? 'r' : 'n') : ((randFunc() < 128) ? 'b' : 'q');
 
   SCL_SquareSet set;
   uint8_t white = SCL_boardWhitesTurn(board);
@@ -2841,57 +2979,57 @@ void SCL_boardRandomMove(SCL_Board board, SCL_RandomFunction randFunc,
     {
       SCL_SquareSet moves;
 
-      SCL_boardGetMoves(board,i,moves);
+      SCL_boardGetMoves(board, i, moves);
 
       if (SCL_squareSetSize(moves) != 0)
-        SCL_squareSetAdd(set,i);
+        SCL_squareSetAdd(set, i);
     }
   }
- 
-  *squareFrom = SCL_squareSetGetRandom(set,randFunc);
 
-  SCL_boardGetMoves(board,*squareFrom,set);
+  *squareFrom = SCL_squareSetGetRandom(set, randFunc);
 
-  *squareTo = SCL_squareSetGetRandom(set,randFunc);
+  SCL_boardGetMoves(board, *squareFrom, set);
+
+  *squareTo = SCL_squareSetGetRandom(set, randFunc);
 }
 
 void SCL_printBoardSimple(
-  SCL_Board board,
-  SCL_PutCharFunction putCharFunc,
-  uint8_t selectSquare,
-  uint8_t format)
+    SCL_Board board,
+    SCL_PutCharFunction putCharFunc,
+    uint8_t selectSquare,
+    uint8_t format)
 {
   SCL_SquareSet s;
 
   SCL_squareSetClear(s);
 
-  SCL_printBoard(board,putCharFunc,s,selectSquare,format,1,1,0);
+  SCL_printBoard(board, putCharFunc, s, selectSquare, format, 1, 1, 0);
 }
 
 int16_t SCL_getAIMove(
-  SCL_Board board,
-  uint8_t baseDepth,
-  uint8_t extensionExtraDepth,
-  uint8_t endgameExtraDepth,
-  SCL_StaticEvaluationFunction evalFunc,
-  SCL_RandomFunction randFunc,
-  uint8_t randomness,
-  uint8_t repetitionMoveFrom,
-  uint8_t repetitionMoveTo,
-  uint8_t *resultFrom,
-  uint8_t *resultTo,
-  char *resultProm)
+    SCL_Board board,
+    uint8_t baseDepth,
+    uint8_t extensionExtraDepth,
+    uint8_t endgameExtraDepth,
+    SCL_StaticEvaluationFunction evalFunc,
+    SCL_RandomFunction randFunc,
+    uint8_t randomness,
+    uint8_t repetitionMoveFrom,
+    uint8_t repetitionMoveTo,
+    uint8_t *resultFrom,
+    uint8_t *resultTo,
+    char *resultProm)
 {
 #if SCL_DEBUG_AI
   puts("===== AI debug =====");
   putchar('(');
   unsigned char debugFirst = 1;
   char moveStr[8];
-#endif 
+#endif
 
   if (baseDepth == 0)
   {
-    SCL_boardRandomMove(board,randFunc,resultFrom,resultTo,resultProm);
+    SCL_boardRandomMove(board, randFunc, resultFrom, resultTo, resultProm);
 #ifndef SCL_EVALUATION_FUNCTION
     return evalFunc(board);
 #else
@@ -2907,22 +3045,21 @@ int16_t SCL_getAIMove(
   *resultProm = 'q';
 
   int16_t bestScore =
-    SCL_boardWhitesTurn(board) ?
-    -1 * SCL_EVALUATION_MAX_SCORE - 1 : (SCL_EVALUATION_MAX_SCORE + 1);
+      SCL_boardWhitesTurn(board) ? -1 * SCL_EVALUATION_MAX_SCORE - 1 : (SCL_EVALUATION_MAX_SCORE + 1);
 
   for (uint8_t i = 0; i < SCL_BOARD_SQUARES; ++i)
-    if (board[i] != '.' && 
-      SCL_boardWhitesTurn(board) == SCL_pieceIsWhite(board[i]))
+    if (board[i] != '.' &&
+        SCL_boardWhitesTurn(board) == SCL_pieceIsWhite(board[i]))
     {
       SCL_SquareSet moves;
 
       SCL_squareSetClear(moves);
 
-      SCL_boardGetMoves(board,i,moves);
+      SCL_boardGetMoves(board, i, moves);
 
       SCL_SQUARE_SET_ITERATE_BEGIN(moves)
 
-        int16_t score = 0;
+      int16_t score = 0;
 
 #if SCL_DEBUG_AI
       if (debugFirst)
@@ -2930,71 +3067,69 @@ int16_t SCL_getAIMove(
       else
         putchar(',');
 
-printf("%s ",SCL_moveToString(
-board,i,iteratedSquare,'q',moveStr));
+      printf("%s ", SCL_moveToString(
+                        board, i, iteratedSquare, 'q', moveStr));
 
 #endif
 
-        if (i != repetitionMoveFrom || iteratedSquare != repetitionMoveTo)
-        {
-          SCL_MoveUndo undo = SCL_boardMakeMove(board,i,iteratedSquare,'q');
+      if (i != repetitionMoveFrom || iteratedSquare != repetitionMoveTo)
+      {
+        SCL_MoveUndo undo = SCL_boardMakeMove(board, i, iteratedSquare, 'q');
 
-          score = SCL_boardEvaluateDynamic(board,baseDepth - 1,
-            extensionExtraDepth,evalFunc);
+        score = SCL_boardEvaluateDynamic(board, baseDepth - 1,
+                                         extensionExtraDepth, evalFunc);
 
-          SCL_boardUndoMove(board,undo);
-        }
+        SCL_boardUndoMove(board, undo);
+      }
 
-        if (randFunc != 0 &&
+      if (randFunc != 0 &&
           randomness > 1 &&
-          score < 16000 && 
+          score < 16000 &&
           score > -16000)
-        {
-          /*^ We limit randomizing by about half the max score for two reasons:
-            to prevent over/under flows and secondly we don't want to alter
-            the highest values for checkmate -- these are modified by tiny
-            values depending on their depth so as to prevent endless loops in
-            which most moves are winning, biasing such values would completely
-            kill that algorithm */
+      {
+        /*^ We limit randomizing by about half the max score for two reasons:
+          to prevent over/under flows and secondly we don't want to alter
+          the highest values for checkmate -- these are modified by tiny
+          values depending on their depth so as to prevent endless loops in
+          which most moves are winning, biasing such values would completely
+          kill that algorithm */
 
-          int16_t bias = randFunc();
-          bias = (bias - 128) / 2;
-          bias *= randomness - 1;
-          score += bias;
-        }
+        int16_t bias = randFunc();
+        bias = (bias - 128) / 2;
+        bias *= randomness - 1;
+        score += bias;
+      }
 
-        uint8_t comparison =
+      uint8_t comparison =
           score == bestScore;
 
-        if ((comparison != 1) &&
-          (
-            (SCL_boardWhitesTurn(board) && score > bestScore) ||
-            (!SCL_boardWhitesTurn(board) && score < bestScore)
-          ))
-          comparison = 2;
+      if ((comparison != 1) &&
+          ((SCL_boardWhitesTurn(board) && score > bestScore) ||
+           (!SCL_boardWhitesTurn(board) && score < bestScore)))
+        comparison = 2;
 
-        uint8_t replace = 0;
+      uint8_t replace = 0;
 
-        if (randFunc == 0)
-          replace = comparison == 2;
-        else
-          replace = (comparison == 2) ||
-          ((comparison == 1) && (randFunc() < 160)); // not uniform distr. but simple
+      if (randFunc == 0)
+        replace = comparison == 2;
+      else
+        replace = (comparison == 2) ||
+                  ((comparison == 1) && (randFunc() < 160)); // not uniform distr. but simple
 
-        if (replace)
-        {
-          *resultFrom = i;
-          *resultTo = iteratedSquare;
-          bestScore = score;
-        }
+      if (replace)
+      {
+        *resultFrom = i;
+        *resultTo = iteratedSquare;
+        bestScore = score;
+      }
 
       SCL_SQUARE_SET_ITERATE_END
     }
 
 #if SCL_DEBUG_AI
-  printf(")%d %s\n",bestScore,SCL_moveToString(board,*resultFrom,*resultTo,'q',moveStr));
+  printf(")%d %s\n", bestScore, SCL_moveToString(board, *resultFrom, *resultTo, 'q', moveStr));
   puts("===== AI debug end ===== ");
-#endif 
+#endif
 
   return bestScore;
 }
@@ -3004,8 +3139,13 @@ uint8_t SCL_boardToFEN(SCL_Board board, char *string)
   uint8_t square = 56;
   uint8_t spaces = 0;
   uint8_t result = 0;
- 
-  #define put(c) { *string = (c); string++; result++; }
+
+#define put(c)     \
+  {                \
+    *string = (c); \
+    string++;      \
+    result++;      \
+  }
 
   while (1) // pieces
   {
@@ -3020,7 +3160,7 @@ uint8_t SCL_boardToFEN(SCL_Board board, char *string)
       if (spaces != 0)
       {
         put('0' + spaces)
-        spaces = 0; 
+            spaces = 0;
       }
 
       put(s)
@@ -3033,13 +3173,13 @@ uint8_t SCL_boardToFEN(SCL_Board board, char *string)
       if (spaces != 0)
       {
         put('0' + spaces)
-        spaces = 0; 
+            spaces = 0;
       }
 
       if (square == 8)
         break;
-   
-      put('/'); 
+
+      put('/');
 
       square -= 16;
     }
@@ -3053,10 +3193,14 @@ uint8_t SCL_boardToFEN(SCL_Board board, char *string)
 
   if (b != 0) // castling
   {
-    if (b & 0x10) put('K');
-    if (b & 0x20) put('Q');
-    if (b & 0x40) put('k');
-    if (b & 0x80) put('q');
+    if (b & 0x10)
+      put('K');
+    if (b & 0x20)
+      put('Q');
+    if (b & 0x40)
+      put('k');
+    if (b & 0x80)
+      put('q');
   }
   else
     put('-');
@@ -3077,9 +3221,7 @@ uint8_t SCL_boardToFEN(SCL_Board board, char *string)
   {
     put(' ');
 
-    uint8_t moves = i == 0 ?
-      ((uint8_t) board[SCL_BOARD_MOVE_COUNT_BYTE]) :
-      (((uint8_t) board[SCL_BOARD_PLY_BYTE]) / 2 + 1);
+    uint8_t moves = i == 0 ? ((uint8_t)board[SCL_BOARD_MOVE_COUNT_BYTE]) : (((uint8_t)board[SCL_BOARD_PLY_BYTE]) / 2 + 1);
 
     uint8_t hundreds = moves / 100;
     uint8_t tens = (moves % 100) / 10;
@@ -3093,14 +3235,13 @@ uint8_t SCL_boardToFEN(SCL_Board board, char *string)
       put('0' + tens);
 
     put('0' + moves % 10);
-    
   }
 
   *string = 0; // terminate the string
 
   return result + 1;
 
-  #undef put
+#undef put
 }
 
 uint8_t SCL_boardFromFEN(SCL_Board board, const char *string)
@@ -3142,26 +3283,39 @@ uint8_t SCL_boardFromFEN(SCL_Board board, const char *string)
     string++;
   }
 
-#define nextChar string++; if (*string == 0) return 0;
+#define nextChar    \
+  string++;         \
+  if (*string == 0) \
+    return 0;
 
   nextChar // space
 
-  board[SCL_BOARD_PLY_BYTE] = *string == 'b';
+      board[SCL_BOARD_PLY_BYTE] = *string == 'b';
   nextChar
 
-  nextChar // space
+      nextChar // space
 
-  uint8_t castleEnPassant = 0x0;
+          uint8_t castleEnPassant = 0x0;
 
   while (*string != ' ')
   {
     switch (*string)
     {
-      case 'K': castleEnPassant |= 0x10; break;
-      case 'Q': castleEnPassant |= 0x20; break;
-      case 'k': castleEnPassant |= 0x40; break;
-      case 'q': castleEnPassant |= 0x80; break;
-      default: castleEnPassant |= 0xf0; break;  // for partial XFEN compat.
+    case 'K':
+      castleEnPassant |= 0x10;
+      break;
+    case 'Q':
+      castleEnPassant |= 0x20;
+      break;
+    case 'k':
+      castleEnPassant |= 0x40;
+      break;
+    case 'q':
+      castleEnPassant |= 0x80;
+      break;
+    default:
+      castleEnPassant |= 0xf0;
+      break; // for partial XFEN compat.
     }
 
     nextChar
@@ -3169,23 +3323,22 @@ uint8_t SCL_boardFromFEN(SCL_Board board, const char *string)
 
   nextChar // space
 
-  if (*string != '-')
+      if (*string != '-')
   {
     castleEnPassant |= *string - 'a';
     nextChar
   }
-  else
-    castleEnPassant |= 0x0f;
+  else castleEnPassant |= 0x0f;
 
   nextChar
 
-  board[SCL_BOARD_ENPASSANT_CASTLE_BYTE] = castleEnPassant;
+      board[SCL_BOARD_ENPASSANT_CASTLE_BYTE] = castleEnPassant;
 
   for (uint8_t i = 0; i < 2; ++i)
   {
     nextChar // space
 
-    uint8_t ply = 0;
+        uint8_t ply = 0;
 
     while (1)
     {
@@ -3194,7 +3347,7 @@ uint8_t SCL_boardFromFEN(SCL_Board board, const char *string)
       if (c < '0' || c > '9')
         break;
 
-      ply = ply * 10 + (c - '0'); 
+      ply = ply * 10 + (c - '0');
 
       string++;
     }
@@ -3243,7 +3396,7 @@ uint8_t SCL_boardEstimatePhase(SCL_Board board)
     return SCL_PHASE_ENDGAME;
 
   if (ply <= 10 && (totalMaterial >= SCL_START_MATERIAL - 3 * SCL_VALUE_PAWN))
-    return SCL_PHASE_OPENING;    
+    return SCL_PHASE_OPENING;
 
   return SCL_PHASE_MIDGAME;
 }
@@ -3251,23 +3404,22 @@ uint8_t SCL_boardEstimatePhase(SCL_Board board)
 #define SCL_IMAGE_COUNT 12
 
 static const uint8_t SCL_images[8 * SCL_IMAGE_COUNT] =
-{
-  0xff,0xff,0xff,0xff,0xff,0xff,0xff,0xff,0xff,0xff,0xff,0xff,
-  0xff,0x81,0xff,0xff,0xff,0xff,0xff,0x81,0xff,0xff,0xff,0xff,
-  0xff,0x81,0xe7,0xf7,0xf7,0xaa,0xff,0xbd,0xe7,0xf7,0xf7,0xaa,
-  0xff,0xc3,0xc3,0xe3,0xc1,0x80,0xff,0x99,0xdb,0xeb,0xc9,0x94,
-  0xe7,0xc3,0x81,0xc1,0x94,0x80,0xe7,0xdb,0xbd,0xdd,0xbe,0xbe,
-  0xc3,0xc3,0x91,0xe3,0x80,0x80,0xdb,0x99,0x8d,0xeb,0xaa,0xbe,
-  0xc3,0x81,0xe1,0xc1,0xc1,0xc1,0xdb,0xbd,0xdd,0xe3,0xdd,0xdd,
-  0x81,0x81,0xc1,0x9c,0xc1,0xc1,0x81,0x81,0xc1,0x9c,0xc1,0xc1
-};
+    {
+        0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff,
+        0xff, 0x81, 0xff, 0xff, 0xff, 0xff, 0xff, 0x81, 0xff, 0xff, 0xff, 0xff,
+        0xff, 0x81, 0xe7, 0xf7, 0xf7, 0xaa, 0xff, 0xbd, 0xe7, 0xf7, 0xf7, 0xaa,
+        0xff, 0xc3, 0xc3, 0xe3, 0xc1, 0x80, 0xff, 0x99, 0xdb, 0xeb, 0xc9, 0x94,
+        0xe7, 0xc3, 0x81, 0xc1, 0x94, 0x80, 0xe7, 0xdb, 0xbd, 0xdd, 0xbe, 0xbe,
+        0xc3, 0xc3, 0x91, 0xe3, 0x80, 0x80, 0xdb, 0x99, 0x8d, 0xeb, 0xaa, 0xbe,
+        0xc3, 0x81, 0xe1, 0xc1, 0xc1, 0xc1, 0xdb, 0xbd, 0xdd, 0xe3, 0xdd, 0xdd,
+        0x81, 0x81, 0xc1, 0x9c, 0xc1, 0xc1, 0x81, 0x81, 0xc1, 0x9c, 0xc1, 0xc1};
 
 void SCL_drawBoard(
-  SCL_Board board,
-  SCL_PutPixelFunction putPixel,
-  uint8_t selectedSquare,
-  SCL_SquareSet highlightSquares,
-  uint8_t blackDown)
+    SCL_Board board,
+    SCL_PutPixelFunction putPixel,
+    uint8_t selectedSquare,
+    SCL_SquareSet highlightSquares,
+    uint8_t blackDown)
 {
   uint8_t row = 0;
   uint8_t col = 0;
@@ -3292,31 +3444,42 @@ void SCL_drawBoard(
       else
       {
         uint8_t offset = SCL_pieceIsWhite(piece) ? 6 : 0;
-        piece = SCL_pieceToColor(piece,1);
+        piece = SCL_pieceToColor(piece, 1);
 
         switch (piece)
         {
-          case 'R': offset += 1; break;
-          case 'N': offset += 2; break;
-          case 'B': offset += 3; break;
-          case 'K': offset += 4; break;
-          case 'Q': offset += 5; break;
-          default: break;
+        case 'R':
+          offset += 1;
+          break;
+        case 'N':
+          offset += 2;
+          break;
+        case 'B':
+          offset += 3;
+          break;
+        case 'K':
+          offset += 4;
+          break;
+        case 'Q':
+          offset += 5;
+          break;
+        default:
+          break;
         }
-      
+
         pictureLine = SCL_images[y * SCL_IMAGE_COUNT + offset];
       }
 
-      if (SCL_squareSetContains(highlightSquares,s))
+      if (SCL_squareSetContains(highlightSquares, s))
         pictureLine &= (y % 2) ? 0xaa : 0x55;
-      
+
       if (s == selectedSquare)
         pictureLine &= (y == 0 || y == 7) ? 0x00 : ~0x81;
 
       loadLine = 0;
     }
 
-    putPixel(pictureLine & 0x80,n);
+    putPixel(pictureLine & 0x80, n);
     pictureLine <<= 1;
 
     n++;
@@ -3347,8 +3510,8 @@ void SCL_drawBoard(
 uint32_t SCL_boardHash32(const SCL_Board board)
 {
   uint32_t result = (board[SCL_BOARD_PLY_BYTE] & 0x01) +
-    (((uint32_t) ((uint8_t) board[SCL_BOARD_ENPASSANT_CASTLE_BYTE])) << 24) +
-    board[SCL_BOARD_MOVE_COUNT_BYTE];
+                    (((uint32_t)((uint8_t)board[SCL_BOARD_ENPASSANT_CASTLE_BYTE])) << 24) +
+                    board[SCL_BOARD_MOVE_COUNT_BYTE];
 
   const char *b = board;
 
@@ -3356,22 +3519,26 @@ uint32_t SCL_boardHash32(const SCL_Board board)
   {
     switch (*b)
     {
-#define C(p,n) case p: result ^= (i + 1) * n; break;
+#define C(p, n)            \
+  case p:                  \
+    result ^= (i + 1) * n; \
+    break;
       // the below number are primes
-      C('P',4003)
-      C('R',84673)
-      C('N',93911)
-      C('B',999331)
-      C('Q',909091)
-      C('K',2796203)
-      C('p',4793)
-      C('r',19391)
-      C('n',391939)
-      C('b',108301)
-      C('q',174763)
-      C('k',2474431)
+      C('P', 4003)
+      C('R', 84673)
+      C('N', 93911)
+      C('B', 999331)
+      C('Q', 909091)
+      C('K', 2796203)
+      C('p', 4793)
+      C('r', 19391)
+      C('n', 391939)
+      C('b', 108301)
+      C('q', 174763)
+      C('k', 2474431)
 #undef C
-      default: break;
+    default:
+      break;
     }
   }
 
@@ -3387,14 +3554,14 @@ void SCL_boardDisableCastling(SCL_Board board)
 }
 
 uint8_t SCL_boardMoveResetsCount(SCL_Board board,
-  uint8_t squareFrom, uint8_t squareTo)
+                                 uint8_t squareFrom, uint8_t squareTo)
 {
   return board[squareFrom] == 'P' || board[squareFrom] == 'p' ||
-    board[squareTo] != '.';
+         board[squareTo] != '.';
 }
 
 void SCL_printPGN(SCL_Record r, SCL_PutCharFunction putCharFunc,
-  SCL_Board initialState)
+                  SCL_Board initialState)
 {
   if (SCL_recordLength(r) == 0)
     return;
@@ -3414,7 +3581,7 @@ void SCL_printPGN(SCL_Record r, SCL_PutCharFunction putCharFunc,
     uint8_t s0, s1;
     char p;
 
-    uint8_t state = SCL_recordGetMove(r,pos,&s0,&s1,&p);
+    uint8_t state = SCL_recordGetMove(r, pos, &s0, &s1, &p);
 
     pos++;
 
@@ -3436,7 +3603,7 @@ void SCL_printPGN(SCL_Record r, SCL_PutCharFunction putCharFunc,
 
 #if !SCL_960_CASTLING
     if ((board[s0] == 'K' && s0 == 4 && (s1 == 2 || s1 == 6)) ||
-      (board[s0] == 'k' && s0 == 60 && (s1 == 62 || s1 == 58)))
+        (board[s0] == 'k' && s0 == 60 && (s1 == 62 || s1 == 58)))
 #else
     if ((board[s0] == 'K' && board[s1] == 'R') ||
         (board[s0] == 'k' && board[s1] == 'r'))
@@ -3463,7 +3630,7 @@ void SCL_printPGN(SCL_Record r, SCL_PutCharFunction putCharFunc,
 
       if (!pawn)
       {
-        putCharFunc(SCL_pieceToColor(board[s0],1));
+        putCharFunc(SCL_pieceToColor(board[s0], 1));
 
         // disambiguation:
 
@@ -3473,12 +3640,12 @@ void SCL_printPGN(SCL_Record r, SCL_PutCharFunction putCharFunc,
           if (i != s0 && board[i] == board[s0])
           {
             SCL_SquareSet s;
-            
+
             SCL_squareSetClear(s);
 
-            SCL_boardGetMoves(board,i,s);
+            SCL_boardGetMoves(board, i, s);
 
-            if (SCL_squareSetContains(s,s1))
+            if (SCL_squareSetContains(s, s1))
               specify |= (s0 % 8 != s1 % 8) ? 1 : 2;
           }
 
@@ -3490,28 +3657,28 @@ void SCL_printPGN(SCL_Record r, SCL_PutCharFunction putCharFunc,
       }
 
       if (board[s1] != '.' ||
-       (pawn && s0 % 8 != s1 % 8 && board[s1] == '.')) // capture?
+          (pawn && s0 % 8 != s1 % 8 && board[s1] == '.')) // capture?
       {
         if (pawn)
           putCharFunc('a' + s0 % 8);
-          
+
         putCharFunc('x');
       }
-      
+
       putCharFunc('a' + s1 % 8);
       putCharFunc('1' + s1 / 8);
 
       if (pawn && (s1 >= 56 || s1 <= 7)) // promotion?
       {
         putCharFunc('=');
-        putCharFunc(SCL_pieceToColor(p,1));
+        putCharFunc(SCL_pieceToColor(p, 1));
       }
     }
 
-    SCL_boardMakeMove(board,s0,s1,p);
+    SCL_boardMakeMove(board, s0, s1, p);
 
     uint8_t position = SCL_boardGetPosition(board);
- 
+
     if (position == SCL_POSITION_CHECK)
       putCharFunc('+');
 
@@ -3525,7 +3692,7 @@ void SCL_printPGN(SCL_Record r, SCL_PutCharFunction putCharFunc,
       putCharFunc('*');
       break;
     }
-      
+
     putCharFunc(' ');
   }
 }
@@ -3541,7 +3708,7 @@ void SCL_gameInit(SCL_Game *game, const SCL_Board startState)
   game->startState = startState;
 
   if (startState != 0)
-    SCL_boardCopy(startState,game->board);
+    SCL_boardCopy(startState, game->board);
   else
     SCL_boardInit(game->board);
 
@@ -3549,7 +3716,7 @@ void SCL_gameInit(SCL_Game *game, const SCL_Board startState)
 
   for (uint8_t i = 0; i < 14; ++i)
     game->prevMoves[i] = 0;
- 
+
   game->state = SCL_GAME_STATE_PLAYING;
   game->ply = 0;
 
@@ -3557,35 +3724,34 @@ void SCL_gameInit(SCL_Game *game, const SCL_Board startState)
 }
 
 uint8_t SCL_gameGetRepetiotionMove(SCL_Game *game,
-  uint8_t *squareFrom, uint8_t *squareTo)
+                                   uint8_t *squareFrom, uint8_t *squareTo)
 {
   if (squareFrom != 0 && squareTo != 0)
   {
-      *squareFrom = 0;
-      *squareTo = 0;
+    *squareFrom = 0;
+    *squareTo = 0;
   }
 
   /*  pos. 1st         2nd         3rd
             |           |           |
-            v           v           v       
+            v           v           v
              01 23 45 67 89 AB CD EF
      move    ab cd ba dc ab cd ba dc */
 
   if (game->ply >= 7 &&
-    game->prevMoves[0] == game->prevMoves[5] &&
-    game->prevMoves[0] == game->prevMoves[8] &&
-    game->prevMoves[0] == game->prevMoves[13] &&
+      game->prevMoves[0] == game->prevMoves[5] &&
+      game->prevMoves[0] == game->prevMoves[8] &&
+      game->prevMoves[0] == game->prevMoves[13] &&
 
-    game->prevMoves[1] == game->prevMoves[4] &&
-    game->prevMoves[1] == game->prevMoves[9] &&
-    game->prevMoves[1] == game->prevMoves[12] &&
+      game->prevMoves[1] == game->prevMoves[4] &&
+      game->prevMoves[1] == game->prevMoves[9] &&
+      game->prevMoves[1] == game->prevMoves[12] &&
 
-    game->prevMoves[2] == game->prevMoves[7] &&
-    game->prevMoves[2] == game->prevMoves[10] &&
+      game->prevMoves[2] == game->prevMoves[7] &&
+      game->prevMoves[2] == game->prevMoves[10] &&
 
-    game->prevMoves[3] == game->prevMoves[6] &&
-    game->prevMoves[3] == game->prevMoves[11]
-    )
+      game->prevMoves[3] == game->prevMoves[6] &&
+      game->prevMoves[3] == game->prevMoves[11])
   {
     if (squareFrom != 0 && squareTo != 0)
     {
@@ -3594,19 +3760,19 @@ uint8_t SCL_gameGetRepetiotionMove(SCL_Game *game,
     }
 
     return 1;
-  } 
+  }
 
   return 0;
 }
 
 void SCL_gameMakeMove(SCL_Game *game, uint8_t squareFrom, uint8_t squareTo,
-  char promoteTo)
+                      char promoteTo)
 {
   uint8_t repetitionS0, repetitionS1;
 
-  SCL_gameGetRepetiotionMove(game,&repetitionS0,&repetitionS1);
-  SCL_boardMakeMove(game->board,squareFrom,squareTo,promoteTo);
-  SCL_recordAdd(game->record,squareFrom,squareTo,promoteTo,SCL_RECORD_CONT);
+  SCL_gameGetRepetiotionMove(game, &repetitionS0, &repetitionS1);
+  SCL_boardMakeMove(game->board, squareFrom, squareTo, promoteTo);
+  SCL_recordAdd(game->record, squareFrom, squareTo, promoteTo, SCL_RECORD_CONT);
   // ^ TODO: SCL_RECORD_CONT
 
   game->ply++;
@@ -3627,20 +3793,20 @@ void SCL_gameMakeMove(SCL_Game *game, uint8_t squareFrom, uint8_t squareTo,
 
     switch (position)
     {
-      case SCL_POSITION_MATE:
-        game->state = SCL_boardWhitesTurn(game->board) ?
-          SCL_GAME_STATE_BLACK_WIN : SCL_GAME_STATE_WHITE_WIN;
-        break;
+    case SCL_POSITION_MATE:
+      game->state = SCL_boardWhitesTurn(game->board) ? SCL_GAME_STATE_BLACK_WIN : SCL_GAME_STATE_WHITE_WIN;
+      break;
 
-      case SCL_POSITION_STALEMATE:
-        game->state = SCL_GAME_STATE_DRAW_STALEMATE;
-        break;
+    case SCL_POSITION_STALEMATE:
+      game->state = SCL_GAME_STATE_DRAW_STALEMATE;
+      break;
 
-      case SCL_POSITION_DEAD:
-        game->state = SCL_GAME_STATE_DRAW_DEAD;
-        break;
+    case SCL_POSITION_DEAD:
+      game->state = SCL_GAME_STATE_DRAW_DEAD;
+      break;
 
-      default: break;
+    default:
+      break;
     }
   }
 }
@@ -3655,26 +3821,26 @@ uint8_t SCL_gameUndoMove(SCL_Game *game)
 
   SCL_Record r;
 
-  SCL_recordCopy(game->record,r);
+  SCL_recordCopy(game->record, r);
 
   uint16_t applyMoves = game->ply - 1;
 
-  SCL_gameInit(game,game->startState);
+  SCL_gameInit(game, game->startState);
 
   for (uint16_t i = 0; i < applyMoves; ++i)
   {
     uint8_t s0, s1;
     char p;
 
-    SCL_recordGetMove(r,i,&s0,&s1,&p);
-    SCL_gameMakeMove(game,s0,s1,p);
+    SCL_recordGetMove(r, i, &s0, &s1, &p);
+    SCL_gameMakeMove(game, s0, s1, p);
   }
-    
+
   return 1;
 }
 
 uint8_t SCL_boardMoveIsLegal(SCL_Board board, uint8_t squareFrom,
-  uint8_t squareTo)
+                             uint8_t squareTo)
 {
   if (squareFrom >= SCL_BOARD_SQUARES || squareTo >= SCL_BOARD_SQUARES)
     return 0;
@@ -3682,14 +3848,14 @@ uint8_t SCL_boardMoveIsLegal(SCL_Board board, uint8_t squareFrom,
   char piece = board[squareFrom];
 
   if ((piece == '.') ||
-    (SCL_boardWhitesTurn(board) != SCL_pieceIsWhite(piece)))
+      (SCL_boardWhitesTurn(board) != SCL_pieceIsWhite(piece)))
     return 0;
 
   SCL_SquareSet moves;
 
-  SCL_boardGetMoves(board,squareFrom,moves);
+  SCL_boardGetMoves(board, squareFrom, moves);
 
-  return SCL_squareSetContains(moves,squareTo);
+  return SCL_squareSetContains(moves, squareTo);
 }
 
 #endif // guard
