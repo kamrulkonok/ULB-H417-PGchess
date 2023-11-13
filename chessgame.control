@@ -1,0 +1,5 @@
+# chessgame extension
+comment = 'Extension for storing and retrieving chess games'
+default_version = '1.0'
+module_pathname = '$libdir/chessgame'
+relocatable = true
