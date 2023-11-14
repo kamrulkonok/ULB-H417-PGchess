@@ -25,6 +25,12 @@ PG_FUNCTION_INFO_V1(chessboard_out);
 PG_FUNCTION_INFO_V1(chessboard_recv);
 PG_FUNCTION_INFO_V1(chessboard_send);
 PG_FUNCTION_INFO_V1(chessboard_constructor);
+PG_FUNCTION_INFO_V1(chessboard_eq);
+PG_FUNCTION_INFO_V1(chessboard_lt);
+PG_FUNCTION_INFO_V1(chessboard_le);
+PG_FUNCTION_INFO_V1(chessboard_gt);
+PG_FUNCTION_INFO_V1(chessboard_ge);
+PG_FUNCTION_INFO_V1(chessboard_neq);
 
 Datum chessboard_in(PG_FUNCTION_ARGS)
 {
@@ -87,4 +93,54 @@ Datum chessboard_constructor(PG_FUNCTION_ARGS)
     memcpy(result->fen, fenStr, len - VARHDRSZ);
     // Return the new chessboard structure
     PG_RETURN_POINTER(result);
+}
+
+Datum chessboard_eq(PG_FUNCTION_ARGS)
+{
+    // Get the two chessboard structures
+    chessboard *board1 = (chessboard *)PG_GETARG_POINTER(0);
+    chessboard *board2 = (chessboard *)PG_GETARG_POINTER(1);
+    // Compare the two FEN strings
+    PG_RETURN_BOOL(strcmp(board1->fen, board2->fen) == 0);
+}
+
+Datum chessboard_neq(PG_FUNCTION_ARGS)
+{
+    // Get the two chessboard structures
+    chessboard *board1 = (chessboard *)PG_GETARG_POINTER(0);
+    chessboard *board2 = (chessboard *)PG_GETARG_POINTER(1);
+    // Compare the two FEN strings
+    PG_RETURN_BOOL(strcmp(board1->fen, board2->fen) != 0);
+}
+
+Datum chessboard_lt(PG_FUNCTION_ARGS)
+{
+    chessboard *board1 = (chessboard *)PG_GETARG_POINTER(0);
+    chessboard *board2 = (chessboard *)PG_GETARG_POINTER(1);
+
+    PG_RETURN_BOOL(strcmp(board1->fen, board2->fen) < 0);
+}
+
+Datum chessboard_le(PG_FUNCTION_ARGS)
+{
+    chessboard *board1 = (chessboard *)PG_GETARG_POINTER(0);
+    chessboard *board2 = (chessboard *)PG_GETARG_POINTER(1);
+
+    PG_RETURN_BOOL(strcmp(board1->fen, board2->fen) <= 0);
+}
+
+Datum chessboard_gt(PG_FUNCTION_ARGS)
+{
+    chessboard *board1 = (chessboard *)PG_GETARG_POINTER(0);
+    chessboard *board2 = (chessboard *)PG_GETARG_POINTER(1);
+
+    PG_RETURN_BOOL(strcmp(board1->fen, board2->fen) > 0);
+}
+
+Datum chessboard_ge(PG_FUNCTION_ARGS)
+{
+    chessboard *board1 = (chessboard *)PG_GETARG_POINTER(0);
+    chessboard *board2 = (chessboard *)PG_GETARG_POINTER(1);
+
+    PG_RETURN_BOOL(strcmp(board1->fen, board2->fen) >= 0);
 }
