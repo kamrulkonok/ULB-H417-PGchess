@@ -386,32 +386,29 @@ Datum chessgame_out(PG_FUNCTION_ARGS)
 
 Datum chessgame_recv(PG_FUNCTION_ARGS)
 {
-    chessgame *game;
-    char *dataPtr;
-
     StringInfo buf = (StringInfo)PG_GETARG_POINTER(0);
     const char *sanMovesStr = pq_getmsgstring(buf);
     int numHalfMoves = pq_getmsgint(buf, sizeof(int32));
 
     // Calculate total size for the chessgame structure and FEN strings
-    int totalSize = sizeof(chessgame) + strlen(sanMovesStr) + 1; // +1 for null terminator of SAN moves
-    for (int i = 0; i <= numHalfMoves; ++i)
+    int sanMovesLen = strlen(sanMovesStr) + 1; // +1 for null terminator of SAN moves
+    int totalSize = sizeof(chessgame) + sanMovesLen;
+
+    for (int i = 0; i < numHalfMoves; ++i)
     {
         const char *fenStr = pq_getmsgstring(buf);
         totalSize += strlen(fenStr) + 1; // +1 for null terminator of each FEN string
     }
 
     // Allocate memory
-    game = (chessgame *)palloc0(totalSize + VARHDRSZ);
+    chessgame *game = (chessgame *)palloc0(totalSize + VARHDRSZ);
     SET_VARSIZE(game, totalSize + VARHDRSZ);
-
-    // Set numHalfMoves
     game->numHalfMoves = numHalfMoves;
 
     // Copy SAN moves string
-    dataPtr = (char *)(game + 1);
+    char *dataPtr = getChessgameSanMoves(game);
     strcpy(dataPtr, sanMovesStr);
-    dataPtr += strlen(sanMovesStr) + 1;
+    dataPtr += sanMovesLen;
 
     // Copy FEN strings
     for (int i = 0; i < numHalfMoves; ++i)
@@ -426,19 +423,16 @@ Datum chessgame_recv(PG_FUNCTION_ARGS)
 
 Datum chessgame_send(PG_FUNCTION_ARGS)
 {
-    char *sanMovesStr;
-    char *fenPtr;
-
     chessgame *game = (chessgame *)PG_GETARG_POINTER(0);
     StringInfoData buf;
     pq_begintypsend(&buf);
 
-    sanMovesStr = getChessgameSanMoves(game);
+    char *sanMovesStr = getChessgameSanMoves(game);
     pq_sendstring(&buf, sanMovesStr);
     pq_sendint(&buf, game->numHalfMoves, sizeof(int32));
 
-    fenPtr = sanMovesStr + strlen(sanMovesStr) + 1;
-    for (int i = 0; i <= game->numHalfMoves; ++i)
+    char *fenPtr = sanMovesStr + strlen(sanMovesStr) + 1;
+    for (int i = 0; i < game->numHalfMoves; ++i)
     {
         pq_sendstring(&buf, fenPtr);
         fenPtr += strlen(fenPtr) + 1;
