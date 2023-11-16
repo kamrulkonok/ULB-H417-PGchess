@@ -160,6 +160,7 @@ Datum chessboard_ge(PG_FUNCTION_ARGS)
 
 typedef struct
 {
+    char vl_len_[4];
     int32 numHalfMoves;
     // Following this are:
     // 1. SAN moves string (null-terminated)
@@ -173,8 +174,9 @@ int32 getChessgameNumHalfMoves(chessgame *game)
 
 char *getChessgameSanMoves(chessgame *game)
 {
-    // The SAN moves string starts right after the chessgame struct
-    return (char *)(game + 1);
+    // The SAN moves string starts right after the numHalfMoves field in the chessgame struct
+    // We need to skip over the vl_len_ field and numHalfMoves field to reach the SAN moves string
+    return (char *)game + offsetof(chessgame, numHalfMoves) + sizeof(game->numHalfMoves);
 }
 
 char *getChessgameBoard(chessgame *game, int halfMoveIndex)
@@ -327,7 +329,10 @@ chessgame *create_chessgame(const char *sanMoves)
 
     // Allocate memory
     game = (chessgame *)palloc0(totalSize + VARHDRSZ);
+    // Set the total size including the header size
     SET_VARSIZE(game, totalSize + VARHDRSZ);
+    // Set the numHalfMoves property
+    game->numHalfMoves = numHalfMoves;
 
     // Copy the SAN moves string
     dataPtr = (char *)(game + 1);
@@ -478,7 +483,8 @@ Datum getBoard(PG_FUNCTION_ARGS)
 
     chessgame *game = (chessgame *)PG_GETARG_POINTER(0);
     int halfMoveIndex = PG_GETARG_INT32(1);
-
+    if (halfMoveIndex > getChessgameNumHalfMoves(game))
+        halfMoveIndex = getChessgameNumHalfMoves(game);
     char *fen = getChessgameBoard(game, halfMoveIndex);
     if (fen == NULL)
         PG_RETURN_NULL();
