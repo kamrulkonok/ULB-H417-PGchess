@@ -116,3 +116,64 @@ CREATE OPERATOR >= (
   LEFTARG = chessboard, RIGHTARG = chessboard,
   PROCEDURE = chessboard_ge
 );
+
+/************************************************************************************************************
+                                          Chessgame to represent SAN and FEN states
+************************************************************************************************************/
+
+/******************************************************************************
+ * Input/Output
+ ******************************************************************************/
+
+CREATE FUNCTION chessgame_in(cstring) RETURNS chessgame
+    AS 'MODULE_PATHNAME', 'chessgame_in'
+    LANGUAGE C IMMUTABLE STRICT PARALLEL SAFE;
+
+CREATE FUNCTION chessgame_out(chessgame) RETURNS cstring
+    AS 'MODULE_PATHNAME', 'chessgame_out'
+    LANGUAGE C IMMUTABLE STRICT PARALLEL SAFE;
+
+CREATE FUNCTION chessgame_recv(internal) RETURNS chessgame
+    AS 'MODULE_PATHNAME', 'chessgame_recv'
+    LANGUAGE C IMMUTABLE STRICT PARALLEL SAFE;
+
+CREATE FUNCTION chessgame_send(chessgame) RETURNS bytea
+    AS 'MODULE_PATHNAME', 'chessgame_send'
+    LANGUAGE C IMMUTABLE STRICT PARALLEL SAFE;
+
+/******************************************************************************
+ * Create the datatype
+ ******************************************************************************/
+
+CREATE TYPE chessgame (
+  internallength = -1,
+  input          = chessgame_in,
+  output         = chessgame_out,
+  receive        = chessgame_recv,
+  send           = chessgame_send
+);
+
+
+CREATE FUNCTION text_to_chessgame(text) RETURNS chessgame
+    AS 'MODULE_PATHNAME', 'text_to_chessgame'
+    LANGUAGE C STRICT;
+
+CREATE CAST (text AS chessgame)
+    WITH FUNCTION text_to_chessgame(text)
+    AS IMPLICIT;
+
+CREATE FUNCTION getBoard(chessgame, integer)
+RETURNS text AS 'MODULE_PATHNAME', 'getBoard'
+LANGUAGE C STABLE STRICT PARALLEL SAFE;
+
+CREATE FUNCTION getFirstMoves(chessgame, integer)
+RETURNS text AS 'MODULE_PATHNAME', 'getFirstMoves'
+LANGUAGE C STABLE STRICT;
+
+CREATE FUNCTION hasOpening(chessgame, chessgame)
+RETURNS boolean AS 'MODULE_PATHNAME', 'hasOpening'
+LANGUAGE C STABLE STRICT;
+
+CREATE FUNCTION hasBoard(chessgame, text, integer)
+RETURNS boolean AS 'MODULE_PATHNAME', 'hasBoard'
+LANGUAGE C STABLE STRICT;
