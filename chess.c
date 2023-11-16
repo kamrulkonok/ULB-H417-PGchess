@@ -180,14 +180,14 @@ char *getChessgameSanMoves(chessgame *game)
 char *getChessgameBoard(chessgame *game, int halfMoveIndex)
 {
     char *dataPtr;
-    if (halfMoveIndex < 0 || halfMoveIndex >= getChessgameNumHalfMoves(game))
+    if (halfMoveIndex < 0)
     {
         return NULL; // Handle invalid index
     }
     // the chessgame board start right after the SAN moves string
 
     dataPtr = getChessgameSanMoves(game) + strlen(getChessgameSanMoves(game)) + 1;
-    for (int i = 0; i < halfMoveIndex; ++i)
+    for (int i = 0; i < halfMoveIndex; i++)
     {
         dataPtr += strlen(dataPtr) + 1;
     }
@@ -283,7 +283,7 @@ int calculateHalfMoves(const char *sanMovesStr)
 
 char **returnBoardStates(const char *sanMoves, int numHalfMoves)
 {
-    char **fenStates = (char **)palloc(sizeof(char *) * numHalfMoves);
+    char **fenStates = (char **)palloc(sizeof(char *) * (numHalfMoves + 1));
     SCL_Record r;
 
     char fen[4096];
@@ -293,7 +293,7 @@ char **returnBoardStates(const char *sanMoves, int numHalfMoves)
     SCL_recordFromPGN(r, sanMoves);
 
     // Iterate over each half-move
-    for (int halfMove = 1; halfMove <= numHalfMoves; halfMove++)
+    for (int halfMove = 0; halfMove <= numHalfMoves; halfMove++)
     {
         // Reset the board to the starting state for each iteration
         SCL_Board board = SCL_BOARD_START_STATE;
@@ -302,9 +302,8 @@ char **returnBoardStates(const char *sanMoves, int numHalfMoves)
         // Convert the board to its FEN representation
         SCL_boardToFEN(board, fen);
         // Store the FEN string in the array
-        fenStates[halfMove - 1] = pstrdup(fen);
+        fenStates[halfMove] = pstrdup(fen);
     }
-
     return fenStates;
 }
 
@@ -321,7 +320,7 @@ chessgame *create_chessgame(const char *sanMoves)
 
     // Calculate total size required for chessgame and all FEN strings
     int totalSize = sizeof(chessgame) + sanMovesLen;
-    for (int i = 0; i < numHalfMoves; ++i)
+    for (int i = 0; i <= numHalfMoves; ++i)
     {
         totalSize += strlen(boardStates[i]) + 1; // +1 for null terminator
     }
@@ -336,7 +335,7 @@ chessgame *create_chessgame(const char *sanMoves)
     dataPtr += sanMovesLen;
 
     // Copy FEN strings
-    for (int i = 0; i < numHalfMoves; ++i)
+    for (int i = 0; i <= numHalfMoves; ++i)
     {
         int fenLen = strlen(boardStates[i]) + 1;
         memcpy(dataPtr, boardStates[i], fenLen);
@@ -391,7 +390,7 @@ Datum chessgame_recv(PG_FUNCTION_ARGS)
 
     // Calculate total size for the chessgame structure and FEN strings
     int totalSize = sizeof(chessgame) + strlen(sanMovesStr) + 1; // +1 for null terminator of SAN moves
-    for (int i = 0; i < numHalfMoves; ++i)
+    for (int i = 0; i <= numHalfMoves; ++i)
     {
         const char *fenStr = pq_getmsgstring(buf);
         totalSize += strlen(fenStr) + 1; // +1 for null terminator of each FEN string
@@ -434,7 +433,7 @@ Datum chessgame_send(PG_FUNCTION_ARGS)
     pq_sendint(&buf, game->numHalfMoves, sizeof(int32));
 
     fenPtr = sanMovesStr + strlen(sanMovesStr) + 1;
-    for (int i = 0; i < game->numHalfMoves; ++i)
+    for (int i = 0; i <= game->numHalfMoves; ++i)
     {
         pq_sendstring(&buf, fenPtr);
         fenPtr += strlen(fenPtr) + 1;
