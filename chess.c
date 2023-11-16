@@ -500,7 +500,7 @@ Datum getFirstMoves(PG_FUNCTION_ARGS)
                  errmsg("half-move count must not be null")));
 
     chessgame *game = (chessgame *)PG_GETARG_POINTER(0);
-    int nHalfMoves = PG_GETARG_INT32(1) + 1;
+    int nHalfMoves = PG_GETARG_INT32(1);
 
     char *sanMoves = getChessgameSanMoves(game);
     char *truncatedSanMoves = pstrdup(sanMoves); // Duplicate the SAN moves string
