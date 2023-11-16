@@ -564,10 +564,10 @@ Datum hasBoard(PG_FUNCTION_ARGS)
                  errmsg("Arguments must not be null")));
 
     chessgame *game = (chessgame *)PG_GETARG_POINTER(0);
-    text *boardFenText = PG_GETARG_TEXT_P(1);
+    chessboard *board = (chessboard *)PG_GETARG_POINTER(1);
     int nHalfMoves = PG_GETARG_INT32(2);
 
-    char *boardFen = text_to_cstring(boardFenText);
+    char *boardFen = board->fen; // Directly access the FEN string from the chessboard object
     bool found = false;
 
     for (int i = 0; i <= nHalfMoves && !found; ++i)
@@ -577,6 +577,5 @@ Datum hasBoard(PG_FUNCTION_ARGS)
             found = true;
     }
 
-    pfree(boardFen);
     PG_RETURN_BOOL(found);
 }

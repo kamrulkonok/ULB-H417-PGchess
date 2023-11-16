@@ -174,6 +174,6 @@ CREATE FUNCTION hasOpening(chessgame, chessgame)
 RETURNS boolean AS 'MODULE_PATHNAME', 'hasOpening'
 LANGUAGE C STABLE STRICT;
 
-CREATE FUNCTION hasBoard(chessgame, text, integer)
+CREATE FUNCTION hasBoard(chessgame, chessboard, integer)
 RETURNS boolean AS 'MODULE_PATHNAME', 'hasBoard'
 LANGUAGE C STABLE STRICT;
