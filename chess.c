@@ -235,50 +235,12 @@ char *trim_san_moves(const char *sanMovesStr)
 
 int calculateHalfMoves(const char *sanMovesStr)
 {
-    int lastMove = 0;
-    int halfMoves = 0;
-    int lastMoveIncomplete = 1;
-    const char *c = sanMovesStr;
-
-    // First, count the moves
-    while (*c != '\0')
-    {
-        // find the pattern of a move number followed by a period
-        if (isdigit((unsigned char)*c) && *(c + 1) == '.')
-        {
-            // Convert the move number to an integer
-            lastMove = *c - '0';
-            // If the next character is a digit, multiply the move number by 10 and add the next digit
-            while (isdigit((unsigned char)*(++c)))
-            {
-                lastMove = lastMove * 10 + (*c - '0');
-            }
-
-            halfMoves = lastMove * 2; // Assume each move has two half moves
-        }
-        c++;
-    }
-    // Then, check if the last move was complete
-    if (lastMove > 0)
-    {
-        const char *endPtr = sanMovesStr + strlen(sanMovesStr) - 1;
-        // Find the last move number in the string (it's followed by a period)
-        while (endPtr > sanMovesStr && *endPtr != '.')
-        {
-            // if there was a space, then the last move was complete
-            if (*endPtr == ' ')
-            {
-                lastMoveIncomplete = 0;
-            }
-            endPtr--;
-        }
-        // Subtract one for incomplete last move
-        if (lastMoveIncomplete)
-        {
-            halfMoves--;
-        }
-    }
-
+    SCL_Record r;
+    SCL_recordInit(r);
+    SCL_recordFromPGN(r, SAN);
+    SCL_Board board = SCL_BOARD_START_STATE;
+    SCL_recordApply(r, board, 540);
+    int halfMoves = board[65];
     return halfMoves;
 }
 
@@ -315,8 +277,7 @@ chessgame *create_chessgame(const char *sanMoves)
 
     const char *sanMovesStr = trim_san_moves(sanMoves);
     int numHalfMoves = calculateHalfMoves(sanMovesStr);
-
-    int sanMovesLen = strlen(sanMovesStr) + 1; // Include null terminator \0
+    const int sanMovesLen = strlen(sanMovesStr) + 1; // Include null terminator \0
     char **boardStates = returnBoardStates(sanMovesStr, numHalfMoves);
 
     // Calculate total size required for chessgame and all FEN strings
