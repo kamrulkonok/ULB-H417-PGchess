@@ -174,7 +174,6 @@ int32 getChessgameNumHalfMoves(chessgame *game)
 
 char *getChessgameSanMoves(chessgame *game)
 {
-    // The SAN moves string starts right after the numHalfMoves field in the chessgame struct
     // We need to skip over the vl_len_ field and numHalfMoves field to reach the SAN moves string
     return (char *)game + offsetof(chessgame, numHalfMoves) + sizeof(game->numHalfMoves);
 }
@@ -317,7 +316,7 @@ chessgame *create_chessgame(const char *sanMoves)
     const char *sanMovesStr = trim_san_moves(sanMoves);
     int numHalfMoves = calculateHalfMoves(sanMovesStr);
 
-    int sanMovesLen = strlen(sanMovesStr) + 1; // Include null terminator
+    int sanMovesLen = strlen(sanMovesStr) + 1; // Include null terminator \0
     char **boardStates = returnBoardStates(sanMovesStr, numHalfMoves);
 
     // Calculate total size required for chessgame and all FEN strings
@@ -574,7 +573,10 @@ Datum hasBoard(PG_FUNCTION_ARGS)
     {
         char *currentFen = getChessgameBoard(game, i);
         if (currentFen != NULL && strcmp(boardFen, currentFen) == 0)
+        {
             found = true;
+            break;
+        }
     }
 
     PG_RETURN_BOOL(found);
