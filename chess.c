@@ -500,12 +500,12 @@ Datum chessgame_send(PG_FUNCTION_ARGS)
     StringInfoData buf;
     pq_begintypsend(&buf);
 
+    pq_sendint(&buf, game->numHalfMoves, sizeof(int32));
     char *sanMovesStr = getChessgameSanMoves(game);
     pq_sendstring(&buf, sanMovesStr);
-    pq_sendint(&buf, game->numHalfMoves, sizeof(int32));
 
     char *fenPtr = sanMovesStr + strlen(sanMovesStr) + 1;
-    for (int i = 0; i < game->numHalfMoves; ++i)
+    for (int i = 0; i <= game->numHalfMoves; ++i)
     {
         pq_sendstring(&buf, fenPtr);
         fenPtr += strlen(fenPtr) + 1;
