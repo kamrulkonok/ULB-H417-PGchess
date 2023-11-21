@@ -332,11 +332,50 @@ char *trim_san_moves(const char *sanMovesStr)
     return trimmedStr;
 }
 
-int calculateHalfMoves(const char *sanMovesStr)
+int calculateHalfMoves(const char *san)
 {
-    SCL_Record r;
-    SCL_recordFromPGN(r, sanMovesStr);
-    return SCL_recordLength(r);
+    int length = strlen(san);
+    int isCompleteMove = 0;
+    // Stack for digits
+    // assuming no chess game exceeds 999 moves
+    char numberStack[3];
+    int stackTop = -1;
+    int i;
+    // Step 1 & 2: Iterate backwards to find the period and check for complete move
+    for (i = length - 1; i >= 0; i--)
+    {
+        if (san[i] == ' ')
+        {
+            isCompleteMove = 1;
+        }
+        else if (san[i] == '.')
+        {
+            break;
+        }
+    }
+
+    // Step 3: Collect digits before the period
+    for (; i >= 0; i--)
+    {
+        if (isdigit(san[i]))
+        {
+            numberStack[++stackTop] = san[i];
+        }
+        else if (san[i] == ' ')
+        {
+            break;
+        }
+    }
+
+    // Convert the collected digits to a number
+    int moveNumber = 0;
+    for (int i = 0; i <= stackTop; i++)
+    {
+        moveNumber = moveNumber * 10 + (numberStack[stackTop - i] - '0');
+    }
+
+    // Step 4: Calculate the number of half moves
+    return isCompleteMove ? moveNumber * 2 : moveNumber * 2 - 1;
 }
 
 char **returnBoardStates(const char *sanMoves, int numHalfMoves)
