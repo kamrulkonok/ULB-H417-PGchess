@@ -186,8 +186,7 @@ char *getChessgameBoard(chessgame *game, int halfMoveIndex)
         return NULL; // Handle invalid index
     }
     // the chessgame board start right after the SAN moves string
-    dataPtr = getChessgameSanMoves(game); // + strlen(getChessgameSanMoves(game)) + 1;
-    // elog(INFO, "dataPtr: %s", dataPtr);
+    dataPtr = getChessgameSanMoves(game) + strlen(getChessgameSanMoves(game)) + 1;
     for (int i = 0; i < halfMoveIndex; i++)
     {
         dataPtr += strlen(dataPtr) + 1;
