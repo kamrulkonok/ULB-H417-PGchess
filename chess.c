@@ -335,14 +335,8 @@ char *trim_san_moves(const char *sanMovesStr)
 int calculateHalfMoves(const char *sanMovesStr)
 {
     SCL_Record r;
-    SCL_recordInit(r);
     SCL_recordFromPGN(r, sanMovesStr);
-    SCL_Board board = SCL_BOARD_START_STATE;
-    // the longest number of chess moves ever played is 269
-    // so we set the limit to 540 half moves
-    SCL_recordApply(r, board, 540);
-    int halfMoves = board[65];
-    return halfMoves;
+    return SCL_recordLength(r);
 }
 
 char **returnBoardStates(const char *sanMoves, int numHalfMoves)
