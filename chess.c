@@ -203,6 +203,13 @@ PG_FUNCTION_INFO_V1(getBoard);
 PG_FUNCTION_INFO_V1(getFirstMoves);
 PG_FUNCTION_INFO_V1(hasOpening);
 PG_FUNCTION_INFO_V1(hasBoard);
+PG_FUNCTION_INFO_V1(chessgame_lt);
+PG_FUNCTION_INFO_V1(chessgame_lte);
+PG_FUNCTION_INFO_V1(chessgame_eq);
+PG_FUNCTION_INFO_V1(chessgame_neq);
+PG_FUNCTION_INFO_V1(chessgame_gte);
+PG_FUNCTION_INFO_V1(chessgame_gt);
+PG_FUNCTION_INFO_V1(chessgame_cmp);
 
 // Helper function to calculate the length of a SAN string without move numbers
 int calculateShortSANLength(int halfMoves, int originalLength)
@@ -692,4 +699,86 @@ Datum hasBoard(PG_FUNCTION_ARGS)
     }
 
     PG_RETURN_BOOL(found);
+}
+
+/**
+ * B Tree Index Operators
+ * for chessgame - chessgame comparison
+ * less than
+ * less than or equal
+ * equal
+ * greater than or equal
+ * greater than
+ * comparison (support function)
+ */
+
+/*
+to support the hasOpening, we implement less than as follows:
+game1 is 'less than' game2 if game1 is a prefix of game2
+*/
+Datum chessgame_lt(PG_FUNCTION_ARGS)
+{
+    chessgame *game1 = (chessgame *)PG_GETARG_POINTER(0);
+    chessgame *game2 = (chessgame *)PG_GETARG_POINTER(1);
+    PG_FREE_IF_COPY(game1, 0);
+    PG_FREE_IF_COPY(game2, 1);
+    PG_RETURN_BOOL(prefix(getChessgameSanMoves(game1), getChessgameSanMoves(game2)));
+}
+
+/*
+in a similar notion,
+*/
+Datum chessgame_lte(PG_FUNCTION_ARGS)
+{
+    chessgame *game1 = (chessgame *)PG_GETARG_POINTER(0);
+    chessgame *game2 = (chessgame *)PG_GETARG_POINTER(1);
+    PG_FREE_IF_COPY(game1, 0);
+    PG_FREE_IF_COPY(game2, 1);
+    PG_RETURN_BOOL(strcmp(getChessgameSanMoves(game1), getChessgameSanMoves(game2)) <= 0);
+}
+
+Datum chessgame_eq(PG_FUNCTION_ARGS)
+{
+    chessgame *game1 = (chessgame *)PG_GETARG_POINTER(0);
+    chessgame *game2 = (chessgame *)PG_GETARG_POINTER(1);
+    PG_FREE_IF_COPY(game1, 0);
+    PG_FREE_IF_COPY(game2, 1);
+    PG_RETURN_BOOL(strcmp(getChessgameSanMoves(game1), getChessgameSanMoves(game2)) == 0);
+}
+
+Datum chessgame_neq(PG_FUNCTION_ARGS)
+{
+    chessgame *game1 = (chessgame *)PG_GETARG_POINTER(0);
+    chessgame *game2 = (chessgame *)PG_GETARG_POINTER(1);
+    PG_FREE_IF_COPY(game1, 0);
+    PG_FREE_IF_COPY(game2, 1);
+    PG_RETURN_BOOL(strcmp(getChessgameSanMoves(game1), getChessgameSanMoves(game2)) != 0);
+}
+
+Datum chessgame_gte(PG_FUNCTION_ARGS)
+{
+    chessgame *game1 = (chessgame *)PG_GETARG_POINTER(0);
+    chessgame *game2 = (chessgame *)PG_GETARG_POINTER(1);
+    PG_FREE_IF_COPY(game1, 0);
+    PG_FREE_IF_COPY(game2, 1);
+    PG_RETURN_BOOL(strcmp(getChessgameSanMoves(game1), getChessgameSanMoves(game2)) >= 0);
+}
+
+Datum chessgame_gt(PG_FUNCTION_ARGS)
+{
+    chessgame *game1 = (chessgame *)PG_GETARG_POINTER(0);
+    chessgame *game2 = (chessgame *)PG_GETARG_POINTER(1);
+    PG_FREE_IF_COPY(game1, 0);
+    PG_FREE_IF_COPY(game2, 1);
+    PG_RETURN_BOOL(strcmp(getChessgameSanMoves(game1), getChessgameSanMoves(game2)) > 0);
+}
+
+Datum chessgame_cmp(PG_FUNCTION_ARGS)
+{
+    chessgame *game1 = (chessgame *)PG_GETARG_POINTER(0);
+    chessgame *game2 = (chessgame *)PG_GETARG_POINTER(1);
+    int result = strcmp(getChessgameSanMoves(game1), getChessgameSanMoves(game2));
+    PG_FREE_IF_COPY(game1, 0);
+    PG_FREE_IF_COPY(game2, 1);
+    PG_RETURN_INT32(result);
 }

@@ -162,18 +162,118 @@ CREATE CAST (text AS chessgame)
     WITH FUNCTION text_to_chessgame(text)
     AS IMPLICIT;
 
+/******************************************************************************
+ * Functions
+ ******************************************************************************/
+
 CREATE FUNCTION getBoard(chessgame, integer)
 RETURNS text AS 'MODULE_PATHNAME', 'getBoard'
 LANGUAGE C STABLE STRICT PARALLEL SAFE;
 
 CREATE FUNCTION getFirstMoves(chessgame, integer)
 RETURNS text AS 'MODULE_PATHNAME', 'getFirstMoves'
-LANGUAGE C STABLE STRICT;
+LANGUAGE C STABLE STRICT PARALLEL SAFE;
 
 CREATE FUNCTION hasOpening(chessgame, chessgame)
 RETURNS boolean AS 'MODULE_PATHNAME', 'hasOpening'
-LANGUAGE C STABLE STRICT;
+LANGUAGE C STABLE STRICT PARALLEL SAFE;
 
 CREATE FUNCTION hasBoard(chessgame, chessboard, integer)
 RETURNS boolean AS 'MODULE_PATHNAME', 'hasBoard'
-LANGUAGE C STABLE STRICT;
+LANGUAGE C STABLE STRICT PARALLEL SAFE;
+
+/******************************************************************************
+ * B Tree Index for hasBoard
+ ******************************************************************************/
+
+CREATE FUNCTION chessgame_lt(chessgame, chessgame)
+  RETURNS boolean
+  AS 'MODULE_PATHNAME', 'chessgame_lt'
+  LANGUAGE C IMMUTABLE STRICT PARALLEL SAFE;
+
+CREATE FUNCTION chessgame_lte(chessgame, chessgame)
+  RETURNS boolean
+  AS 'MODULE_PATHNAME', 'chessgame_lte'
+  LANGUAGE C IMMUTABLE STRICT PARALLEL SAFE;
+
+CREATE FUNCTION chessgame_eq(chessgame, chessgame)
+  RETURNS boolean
+  AS 'MODULE_PATHNAME', 'chessgame_eq'
+  LANGUAGE C IMMUTABLE STRICT PARALLEL SAFE;
+
+CREATE FUNCTION chessgame_neq(chessgame, chessgame)
+  RETURNS boolean
+  AS 'MODULE_PATHNAME', 'chessgame_neq'
+  LANGUAGE C IMMUTABLE STRICT PARALLEL SAFE;
+
+CREATE FUNCTION chessgame_gte(chessgame, chessgame)
+  RETURNS boolean
+  AS 'MODULE_PATHNAME', 'chessgame_gte'
+  LANGUAGE C IMMUTABLE STRICT PARALLEL SAFE;
+
+CREATE FUNCTION chessgame_gt(chessgame, chessgame)
+  RETURNS boolean
+  AS 'MODULE_PATHNAME', 'chessgame_gt'
+  LANGUAGE C IMMUTABLE STRICT PARALLEL SAFE;
+
+CREATE FUNCTION chessgame_cmp(chessgame, chessgame)
+  RETURNS int
+  AS 'MODULE_PATHNAME', 'chessgame_cmp'
+  LANGUAGE C IMMUTABLE STRICT PARALLEL SAFE;
+
+CREATE OPERATOR = (
+    LEFTARG = chessgame,
+    RIGHTARG = chessgame,
+    PROCEDURE = chessgame_eq,
+    COMMUTATOR = =,
+    NEGATOR = <>
+);
+
+CREATE OPERATOR <> (
+    LEFTARG = chessgame,
+    RIGHTARG = chessgame,
+    PROCEDURE = chessgame_neq,
+    COMMUTATOR = <>,
+    NEGATOR = =
+);
+
+CREATE OPERATOR < (
+    LEFTARG = chessgame,
+    RIGHTARG = chessgame,
+    PROCEDURE = chessgame_lt,
+    COMMUTATOR = >,
+    NEGATOR = >=
+);
+
+CREATE OPERATOR > (
+    LEFTARG = chessgame,
+    RIGHTARG = chessgame,
+    PROCEDURE = chessgame_gt,
+    COMMUTATOR = <,
+    NEGATOR = <=
+);
+
+CREATE OPERATOR <= (
+    LEFTARG = chessgame,
+    RIGHTARG = chessgame,
+    PROCEDURE = chessgame_lte,
+    COMMUTATOR = >=,
+    NEGATOR = >
+);
+
+CREATE OPERATOR >= (
+    LEFTARG = chessgame,
+    RIGHTARG = chessgame,
+    PROCEDURE = chessgame_gte,
+    COMMUTATOR = <=,
+    NEGATOR = <
+);
+
+CREATE OPERATOR CLASS chessgame_ops
+    DEFAULT FOR TYPE chessgame USING btree AS
+        OPERATOR        1       < ,
+        OPERATOR        2       <= ,
+        OPERATOR        3       = ,
+        OPERATOR        4       >= ,
+        OPERATOR        5       > ,
+        FUNCTION        1       chessgame_cmp(chessgame, chessgame);
