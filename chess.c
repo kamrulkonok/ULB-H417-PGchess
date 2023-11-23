@@ -158,40 +158,89 @@ Datum chessboard_ge(PG_FUNCTION_ARGS)
                                           Chessgame structure
 ************************************************************************************************************/
 
+// Helper function to create a string builder
+SCL_StringBuilder *SCL_createStringBuilder()
+{
+    SCL_StringBuilder *sb = palloc0(sizeof(SCL_StringBuilder));
+    if (!sb)
+        return NULL;
+
+    // Initial capacity
+    sb->capacity = 256;
+    sb->length = 0;
+    sb->buffer = palloc0(sb->capacity * sizeof(char));
+
+    if (!sb->buffer)
+    {
+        free(sb);
+        return NULL;
+    }
+
+    sb->buffer[0] = '\0';
+    return sb;
+}
+
+// Function to append a character to the string builder
+void SCL_appendChar(SCL_StringBuilder *sb, char c)
+{
+    if (sb->length + 1 >= sb->capacity)
+    {
+        size_t newCapacity = sb->capacity * 2;
+        char *newBuffer = repalloc(sb->buffer, newCapacity);
+        if (!newBuffer)
+            return; // Handle reallocation failure
+
+        sb->buffer = newBuffer;
+        sb->capacity = newCapacity;
+    }
+
+    sb->buffer[sb->length] = c;
+    sb->length++;
+    sb->buffer[sb->length] = '\0';
+}
+
+// Function to finalize the string builder and get the final string
+char *SCL_finalizeStringBuilder(SCL_StringBuilder *sb)
+{
+    char *finalString = repalloc(sb->buffer, sb->length + 1); // Resize to actual size
+    pfree(sb);
+    return finalString;
+}
+
 typedef struct
 {
-    char vl_len_[4];
-    int32 numHalfMoves;
-    // Following this are:
-    // 1. SAN moves string (null-terminated)
-    // 2. Array of chessboard states
+    SCL_Record record;
 } chessgame;
 
 int32 getChessgameNumHalfMoves(chessgame *game)
 {
-    return game->numHalfMoves;
+    return SCL_recordLength(game->record);
 }
 
 char *getChessgameSanMoves(chessgame *game)
 {
-    // We need to skip over the vl_len_ field and numHalfMoves field to reach the SAN moves string
-    return (char *)game + offsetof(chessgame, numHalfMoves) + sizeof(game->numHalfMoves);
+    SCL_Record r;
+    memcpy(r, game->record, sizeof(SCL_Record));
+    char *pgnString = SCL_printPGN(r);
+    return pgnString;
 }
 
 char *getChessgameBoard(chessgame *game, int halfMoveIndex)
 {
-    char *dataPtr;
+    // Handle invalid index
     if (halfMoveIndex < 0)
-    {
-        return NULL; // Handle invalid index
-    }
-    // the chessgame board start right after the SAN moves string
-    dataPtr = getChessgameSanMoves(game) + strlen(getChessgameSanMoves(game)) + 1;
-    for (int i = 0; i < halfMoveIndex; i++)
-    {
-        dataPtr += strlen(dataPtr) + 1;
-    }
-    return dataPtr;
+        return NULL;
+    // maximum length of fen can be 136
+    char *fen = palloc(137 * sizeof(char));
+    SCL_Board board = SCL_BOARD_START_STATE;
+    // Copy the record
+    SCL_Record r;
+    memcpy(r, game->record, sizeof(SCL_Record));
+    // Apply the required number of half moves from the record to the board
+    SCL_recordApply(r, board, halfMoveIndex);
+    // Convert the board to its FEN representation
+    SCL_boardToFEN(board, fen);
+    return fen;
 }
 
 PG_FUNCTION_INFO_V1(chessgame_in);
@@ -211,250 +260,24 @@ PG_FUNCTION_INFO_V1(chessgame_gte);
 PG_FUNCTION_INFO_V1(chessgame_gt);
 PG_FUNCTION_INFO_V1(chessgame_cmp);
 
-// Helper function to calculate the length of a SAN string without move numbers
-int calculateShortSANLength(int halfMoves, int originalLength)
-{
-    int fullMoves = (halfMoves % 2 == 0) ? halfMoves / 2 : (halfMoves + 1) / 2;
-    int singleDigitFullMoves = (fullMoves > 9) ? 9 : fullMoves;
-    int doubleDigitFullMoves = (fullMoves > 9) ? fullMoves - 9 : 0;
-    int tripleDigitFullMoves = (fullMoves > 99) ? fullMoves - 99 : 0;
-
-    // Calculate the total characters occupied by move numbers
-    int charsInMoveNumbers = (singleDigitFullMoves * 2) + (doubleDigitFullMoves * 3) + (tripleDigitFullMoves * 4);
-
-    // Calculate and return the length of SAN string without move numbers
-    return originalLength - charsInMoveNumbers;
-}
-
-// Function to remove move numbers from a SAN string
-char *removeMoveNumbers(const char *originalSAN, int numHalfMoves, int size)
-{
-    char *processedSAN = palloc(size + 1);
-    int i = 0, j = 0;
-    while (originalSAN[i] != '\0')
-    {
-        // Check if the current character is a digit and if it's followed by a period
-        if (isdigit(originalSAN[i]))
-        {
-            int start = i;
-            while (isdigit(originalSAN[i]))
-            { // Skip all consecutive digits
-                i++;
-            }
-            if (originalSAN[i] == '.')
-            {             // Check if the digits are followed by a period
-                i++;      // Skip the period
-                continue; // Move to the next character in the original string
-            }
-            else
-            {
-                i = start; // Reset i to start to copy the numbers as they are not part of a move number
-            }
-        }
-        // Copy the character to processedSAN
-        processedSAN[j++] = originalSAN[i++];
-    }
-    // Null-terminate the processed string
-    processedSAN[j] = '\0';
-    return processedSAN;
-}
-
-// Helper function to calculate the length of a SAN string with move numbers
-int calculateOriginalSANLength(int halfMoves, int lengthWithoutMoveNumbers)
-{
-    int fullMoves = (halfMoves % 2 == 0) ? halfMoves / 2 : (halfMoves + 1) / 2;
-    int singleDigitFullMoves = (fullMoves > 9) ? 9 : fullMoves;
-    int doubleDigitFullMoves = (fullMoves > 9) ? fullMoves - 9 : 0;
-    int tripleDigitFullMoves = (fullMoves > 99) ? fullMoves - 99 : 0;
-
-    // Calculate the total characters to be added by move numbers
-    int charsAddedByMoveNumbers = (singleDigitFullMoves * 2) + (doubleDigitFullMoves * 3) + (tripleDigitFullMoves * 4);
-
-    // Calculate and return the length of SAN string with move numbers
-    return lengthWithoutMoveNumbers + charsAddedByMoveNumbers;
-}
-
-// Function to add move numbers to a shortened SAN string
-char *addMoveNumbers(const char *processedSAN, int size)
-{
-    char *originalSAN = palloc(size + 1);
-    int i = 0, j = 0, moveNumber = 1;
-    int isWhiteMove = 1; // Start with White's move
-
-    while (processedSAN[i] != '\0')
-    {
-        if (isWhiteMove)
-        {
-            // Add move number for White's move
-            j += sprintf(&originalSAN[j], "%d.", moveNumber++);
-        }
-
-        // Copy the move
-        while (processedSAN[i] != ' ' && processedSAN[i] != '\0')
-        {
-            originalSAN[j++] = processedSAN[i++];
-        }
-
-        // Add space after the move if not at the end of string
-        if (processedSAN[i] == ' ')
-        {
-            originalSAN[j++] = processedSAN[i++];
-        }
-
-        // Toggle between White's and Black's move
-        isWhiteMove = !isWhiteMove;
-    }
-
-    // Null-terminate the original string
-    originalSAN[j] = '\0';
-    return originalSAN;
-}
-
 // Helper function to check if 'pre' is a prefix of 'str'
 bool prefix(const char *pre, const char *str)
 {
     return strncmp(pre, str, strlen(pre)) == 0;
 }
 
-char *trim_san_moves(const char *sanMovesStr)
+chessgame *create_chessgame(const char *SAN)
 {
-    // Copy the original string to avoid modifying it directly
-    char *trimmedStr = pstrdup(sanMovesStr);
-
-    // Define tokens that indicate the end of the moves and start of the result
-    const char *endTokens[] = {" 1-0", " 0-1", " 1/2-1/2", NULL};
-
-    for (int i = 0; endTokens[i] != NULL; i++)
-    {
-        char *found = strstr(trimmedStr, endTokens[i]);
-        if (found != NULL)
-        {
-            // Truncate the string at the start of the result
-            *found = '\0';
-            break;
-        }
-    }
-
-    return trimmedStr;
-}
-
-int calculateHalfMoves(const char *san)
-{
-    int length = strlen(san);
-    int isCompleteMove = 0;
-    // Stack for digits
-    // assuming no chess game exceeds 999 moves
-    char numberStack[3];
-    int stackTop = -1;
-    int i;
-    // Step 1 & 2: Iterate backwards to find the period and check for complete move
-    for (i = length - 1; i >= 0; i--)
-    {
-        if (san[i] == ' ')
-        {
-            isCompleteMove = 1;
-        }
-        else if (san[i] == '.')
-        {
-            break;
-        }
-    }
-
-    // Step 3: Collect digits before the period
-    for (; i >= 0; i--)
-    {
-        if (isdigit(san[i]))
-        {
-            numberStack[++stackTop] = san[i];
-        }
-        else if (san[i] == ' ')
-        {
-            break;
-        }
-    }
-
-    // Convert the collected digits to a number
-    int moveNumber = 0;
-    for (int i = 0; i <= stackTop; i++)
-    {
-        moveNumber = moveNumber * 10 + (numberStack[stackTop - i] - '0');
-    }
-
-    // Step 4: Calculate the number of half moves
-    return isCompleteMove ? moveNumber * 2 : moveNumber * 2 - 1;
-}
-
-char **returnBoardStates(const char *sanMoves, int numHalfMoves)
-{
-    char **fenStates = (char **)palloc(sizeof(char *) * (numHalfMoves + 1));
+    // Allocate memory for the chessgame
+    chessgame *game = palloc(sizeof(chessgame));
+    // create the record
     SCL_Record r;
-
-    char fen[4096];
-
-    // Initialize the record and set it from the SAN moves
-    SCL_recordInit(r);
-    SCL_recordFromPGN(r, sanMoves);
-
-    // Iterate over each half-move
-    for (int halfMove = 0; halfMove <= numHalfMoves; halfMove++)
-    {
-        // Reset the board to the starting state for each iteration
-        SCL_Board board = SCL_BOARD_START_STATE;
-        // Apply moves up to the current half-move
-        SCL_recordApply(r, board, halfMove);
-        // Convert the board to its FEN representation
-        SCL_boardToFEN(board, fen);
-        // Store the FEN string in the array
-        fenStates[halfMove] = pstrdup(fen);
-    }
-    return fenStates;
-}
-
-chessgame *create_chessgame(const char *sanMoves)
-{
-    chessgame *game;
-    char *dataPtr;
-    // remove the result of the game from the SAN moves
-    char *sanMovesStr = trim_san_moves(sanMoves);
-    int numHalfMoves = calculateHalfMoves(sanMovesStr);
-    // calculate each board state with the original SAN moves
-    char **boardStates = returnBoardStates(sanMovesStr, numHalfMoves);
-    // we store the SAN without the numbers to save space
-    int sanMovesLen = calculateShortSANLength(numHalfMoves, strlen(sanMovesStr)) + 1;
-    // create a shorter SAN without the move numbers
-    char *shortSAN = removeMoveNumbers(sanMovesStr, numHalfMoves, sanMovesLen);
-    // we don't need the original SAN anymore
-    pfree(sanMovesStr);
-
-    // Calculate total size required for chessgame and all FEN strings
-    int totalSize = sizeof(chessgame) + sanMovesLen;
-    for (int i = 0; i <= numHalfMoves; ++i)
-    {
-        totalSize += strlen(boardStates[i]) + 1; // +1 for null terminator
-    }
-
-    // Allocate memory
-    game = (chessgame *)palloc0(totalSize + VARHDRSZ);
-    // Set the total size including the header size
-    SET_VARSIZE(game, totalSize + VARHDRSZ);
-    // Set the numHalfMoves property
-    game->numHalfMoves = numHalfMoves;
-
-    // Copy the SAN moves string
-    dataPtr = (char *)(game + 1);
-    memcpy(dataPtr, shortSAN, sanMovesLen);
-    dataPtr += sanMovesLen;
-
-    // Copy FEN strings
-    for (int i = 0; i <= numHalfMoves; ++i)
-    {
-        int fenLen = strlen(boardStates[i]) + 1;
-        // elog(INFO, "FEN %d: %s", i, boardStates[i]);
-        memcpy(dataPtr, boardStates[i], fenLen);
-        dataPtr += fenLen;
-        pfree(boardStates[i]);
-    }
-    pfree(boardStates);
+    // apply the SAN to this record
+    SCL_recordFromPGN(r, SAN);
+    // put the record in the game
+    memcpy(game->record, r, sizeof(SCL_Record));
+    // sanity check
+    // char *pgnString = getChessgameSanMoves(game);
 
     return game;
 }
@@ -487,47 +310,26 @@ Datum chessgame_out(PG_FUNCTION_ARGS)
                  errmsg("chessgame must not be null")));
 
     game = (chessgame *)PG_GETARG_POINTER(0);
-    // Extract the SAN moves string (invalid SAN because it does not contain move numbers)
-    shortSANStr = getChessgameSanMoves(game);
-    int originalLength = calculateOriginalSANLength(game->numHalfMoves, strlen(shortSANStr));
-    // Add move numbers to the SAN string
-    sanMovesStr = addMoveNumbers(shortSANStr, originalLength);
+    char *SAN = getChessgameSanMoves(game);
     PG_FREE_IF_COPY(game, 0);
-    PG_RETURN_CSTRING(sanMovesStr);
+    PG_RETURN_CSTRING(SAN);
 }
 
 Datum chessgame_recv(PG_FUNCTION_ARGS)
 {
     StringInfo buf = (StringInfo)PG_GETARG_POINTER(0);
-    const char *sanMovesStr = pq_getmsgstring(buf);
-    int numHalfMoves = pq_getmsgint(buf, sizeof(int32));
+    chessgame *game;
 
-    // Calculate total size for the chessgame structure and FEN strings
-    int sanMovesLen = strlen(sanMovesStr) + 1; // +1 for null terminator of SAN moves
-    int totalSize = sizeof(chessgame) + sanMovesLen;
+    game = (chessgame *)palloc(sizeof(chessgame));
+    if (game == NULL)
+        ereport(ERROR,
+                (errcode(ERRCODE_OUT_OF_MEMORY),
+                 errmsg("out of memory")));
 
-    for (int i = 0; i < numHalfMoves; ++i)
+    // Read the record data from the buffer
+    for (int i = 0; i < SCL_RECORD_MAX_SIZE; i++)
     {
-        const char *fenStr = pq_getmsgstring(buf);
-        totalSize += strlen(fenStr) + 1; // +1 for null terminator of each FEN string
-    }
-
-    // Allocate memory
-    chessgame *game = (chessgame *)palloc0(totalSize + VARHDRSZ);
-    SET_VARSIZE(game, totalSize + VARHDRSZ);
-    game->numHalfMoves = numHalfMoves;
-
-    // Copy SAN moves string
-    char *dataPtr = getChessgameSanMoves(game);
-    strcpy(dataPtr, sanMovesStr);
-    dataPtr += sanMovesLen;
-
-    // Copy FEN strings
-    for (int i = 0; i < numHalfMoves; ++i)
-    {
-        const char *fenStr = pq_getmsgstring(buf);
-        strcpy(dataPtr, fenStr);
-        dataPtr += strlen(fenStr) + 1;
+        game->record[i] = pq_getmsgint(buf, sizeof(int));
     }
 
     PG_RETURN_POINTER(game);
@@ -537,19 +339,17 @@ Datum chessgame_send(PG_FUNCTION_ARGS)
 {
     chessgame *game = (chessgame *)PG_GETARG_POINTER(0);
     StringInfoData buf;
+
+    // Initialize a StringInfo buffer
     pq_begintypsend(&buf);
 
-    pq_sendint(&buf, game->numHalfMoves, sizeof(int32));
-    char *sanMovesStr = getChessgameSanMoves(game);
-    pq_sendstring(&buf, sanMovesStr);
-
-    char *fenPtr = sanMovesStr + strlen(sanMovesStr) + 1;
-    for (int i = 0; i <= game->numHalfMoves; ++i)
+    // Send the record data
+    for (int i = 0; i < SCL_RECORD_MAX_SIZE; i++)
     {
-        pq_sendstring(&buf, fenPtr);
-        fenPtr += strlen(fenPtr) + 1;
+        pq_sendint(&buf, game->record[i], sizeof(int));
     }
 
+    // Return the buffer
     PG_RETURN_BYTEA_P(pq_endtypsend(&buf));
 }
 
@@ -568,12 +368,23 @@ Datum text_to_chessgame(PG_FUNCTION_ARGS)
     sanMovesStr = text_to_cstring(inputText);
     game = create_chessgame(sanMovesStr);
 
+    PG_FREE_IF_COPY(inputText, 0);
     PG_RETURN_POINTER(game);
 }
 
 /************************************************************************************************************
                                           Chessgame functions
 ************************************************************************************************************/
+
+bool lessThan(chessgame *game1, chessgame *game2)
+{
+    /*
+     * game1 is 'less than' game2 if game1 is a prefix of game2
+     */
+    const char *SAN1 = getChessgameSanMoves(game1);
+    const char *SAN2 = getChessgameSanMoves(game2);
+    return prefix(SAN1, SAN2);
+}
 
 Datum getBoard(PG_FUNCTION_ARGS)
 {
@@ -589,16 +400,59 @@ Datum getBoard(PG_FUNCTION_ARGS)
 
     chessgame *game = (chessgame *)PG_GETARG_POINTER(0);
     int halfMoveIndex = PG_GETARG_INT32(1);
-    // elog(INFO, "halfMoveIndex: %d", halfMoveIndex);
-    // elog(INFO, "numHalfMoves: %d", getChessgameNumHalfMoves(game));
+    // Max number of half moves is equivalent to number of half moves in game
     if (halfMoveIndex > getChessgameNumHalfMoves(game))
         halfMoveIndex = getChessgameNumHalfMoves(game);
+    // return the FEN of chessboard at index i
     char *fen = getChessgameBoard(game, halfMoveIndex);
+
     if (fen == NULL)
         PG_RETURN_NULL();
 
     text *result = cstring_to_text(fen);
     PG_RETURN_TEXT_P(result);
+}
+
+char *getFirstNHalfMoves(const char *inputSAN, int N)
+{
+    if (N <= 0 || inputSAN == NULL)
+    {
+        // Return an empty string for invalid input.
+        return pstrdup("");
+    }
+
+    int halfMoveCount = 0;
+    int i = 0;
+    int length = strlen(inputSAN);
+
+    // Traverse the string to find the Nth half-move.
+    while (i < length && halfMoveCount < N)
+    {
+        // Increment halfMoveCount on encountering a space,
+        // but ensure it's not a space following a move number.
+        if (inputSAN[i] == ' ' && (i == 0 || inputSAN[i - 1] != '.'))
+        {
+            halfMoveCount++;
+        }
+        i++;
+    }
+
+    // If the string ends with a space, move back to exclude it.
+    if (i > 0 && inputSAN[i - 1] == ' ')
+    {
+        i--;
+    }
+
+    // Allocate memory for the output string and copy the substring.
+    char *output = (char *)palloc(sizeof(char) * (i + 1));
+    if (output == NULL)
+    {
+        perror("Unable to allocate memory");
+        exit(EXIT_FAILURE);
+    }
+    strncpy(output, inputSAN, i);
+    output[i] = '\0'; // Null-terminate the string.
+    return output;
 }
 
 Datum getFirstMoves(PG_FUNCTION_ARGS)
@@ -614,45 +468,17 @@ Datum getFirstMoves(PG_FUNCTION_ARGS)
                  errmsg("half-move count must not be null")));
 
     chessgame *game = (chessgame *)PG_GETARG_POINTER(0);
-    int nHalfMoves = PG_GETARG_INT32(1);
+    int n = PG_GETARG_INT32(1);
 
-    char *sanMoves = getChessgameSanMoves(game);
-    char *truncatedSanMoves = pstrdup(sanMoves); // Duplicate the SAN moves string
-
-    // Parse the SAN moves string to count half-moves and truncate accordingly
-    int moveCount = 0;
-    char *current = truncatedSanMoves;
-    while (*current != '\0' && moveCount < nHalfMoves)
+    if (n <= 0)
     {
-        if (*current == ' ')
-        {
-            moveCount++;
-        }
-        current++;
+        text *empty_text = cstring_to_text("");
+        PG_RETURN_TEXT_P(empty_text);
     }
 
-    // If current points to a space, we need to include this last half-move
-    if (*current == ' ' && moveCount == nHalfMoves)
-    {
-        current++;
-        while (*current != ' ' && *current != '\0')
-        {
-            current++;
-        }
-    }
-
-    // Truncate the string at the current position
-    *current = '\0';
-
-    // Add move numbers to the string
-    int originalLength = calculateOriginalSANLength(nHalfMoves, strlen(truncatedSanMoves));
-    char *sanMovesWithNumbers = addMoveNumbers(truncatedSanMoves, originalLength);
-    // Return the truncated SAN moves as a new chessgame
-    text *result = cstring_to_text(sanMovesWithNumbers);
-    // Free the memory allocated by the helper functions
-    pfree(truncatedSanMoves);
-    pfree(sanMovesWithNumbers);
-    PG_RETURN_TEXT_P(result);
+    char *SAN = getChessgameSanMoves(game);
+    char *trimmedSAN = getFirstNHalfMoves(SAN, n);
+    PG_RETURN_TEXT_P(cstring_to_text(trimmedSAN));
 }
 
 Datum hasOpening(PG_FUNCTION_ARGS)
@@ -664,14 +490,8 @@ Datum hasOpening(PG_FUNCTION_ARGS)
 
     chessgame *game1 = (chessgame *)PG_GETARG_POINTER(0);
     chessgame *game2 = (chessgame *)PG_GETARG_POINTER(1);
-
-    char *sanMovesGame1 = getChessgameSanMoves(game1);
-    char *sanMovesGame2 = getChessgameSanMoves(game2);
-
-    // Use the prefix function to compare the SAN moves
-    bool result = prefix(sanMovesGame2, sanMovesGame1);
-
-    PG_RETURN_BOOL(result);
+    // game1 has the opening of game2 if game2 < game1
+    PG_RETURN_BOOL(lessThan(game2, game1));
 }
 
 Datum hasBoard(PG_FUNCTION_ARGS)
@@ -685,17 +505,14 @@ Datum hasBoard(PG_FUNCTION_ARGS)
     chessboard *board = (chessboard *)PG_GETARG_POINTER(1);
     int nHalfMoves = PG_GETARG_INT32(2);
 
-    char *boardFen = board->fen; // Directly access the FEN string from the chessboard object
+    char *boardFen = board->fen;
     bool found = false;
 
     for (int i = 0; i <= nHalfMoves && !found; ++i)
     {
         char *currentFen = getChessgameBoard(game, i);
         if (currentFen != NULL && strcmp(boardFen, currentFen) == 0)
-        {
             found = true;
-            break;
-        }
     }
 
     PG_RETURN_BOOL(found);
@@ -712,29 +529,23 @@ Datum hasBoard(PG_FUNCTION_ARGS)
  * comparison (support function)
  */
 
-/*
-to support the hasOpening, we implement less than as follows:
-game1 is 'less than' game2 if game1 is a prefix of game2
-*/
 Datum chessgame_lt(PG_FUNCTION_ARGS)
 {
     chessgame *game1 = (chessgame *)PG_GETARG_POINTER(0);
     chessgame *game2 = (chessgame *)PG_GETARG_POINTER(1);
+
     PG_FREE_IF_COPY(game1, 0);
     PG_FREE_IF_COPY(game2, 1);
-    PG_RETURN_BOOL(prefix(getChessgameSanMoves(game1), getChessgameSanMoves(game2)));
+    PG_RETURN_BOOL(lessThan(game1, game2));
 }
 
-/*
-in a similar notion,
-*/
 Datum chessgame_lte(PG_FUNCTION_ARGS)
 {
     chessgame *game1 = (chessgame *)PG_GETARG_POINTER(0);
     chessgame *game2 = (chessgame *)PG_GETARG_POINTER(1);
     PG_FREE_IF_COPY(game1, 0);
     PG_FREE_IF_COPY(game2, 1);
-    PG_RETURN_BOOL(strcmp(getChessgameSanMoves(game1), getChessgameSanMoves(game2)) <= 0);
+    PG_RETURN_BOOL(lessThan(game1, game2) || strcmp(getChessgameSanMoves(game1), getChessgameSanMoves(game2)) == 0);
 }
 
 Datum chessgame_eq(PG_FUNCTION_ARGS)
@@ -755,22 +566,22 @@ Datum chessgame_neq(PG_FUNCTION_ARGS)
     PG_RETURN_BOOL(strcmp(getChessgameSanMoves(game1), getChessgameSanMoves(game2)) != 0);
 }
 
-Datum chessgame_gte(PG_FUNCTION_ARGS)
-{
-    chessgame *game1 = (chessgame *)PG_GETARG_POINTER(0);
-    chessgame *game2 = (chessgame *)PG_GETARG_POINTER(1);
-    PG_FREE_IF_COPY(game1, 0);
-    PG_FREE_IF_COPY(game2, 1);
-    PG_RETURN_BOOL(strcmp(getChessgameSanMoves(game1), getChessgameSanMoves(game2)) >= 0);
-}
-
 Datum chessgame_gt(PG_FUNCTION_ARGS)
 {
     chessgame *game1 = (chessgame *)PG_GETARG_POINTER(0);
     chessgame *game2 = (chessgame *)PG_GETARG_POINTER(1);
     PG_FREE_IF_COPY(game1, 0);
     PG_FREE_IF_COPY(game2, 1);
-    PG_RETURN_BOOL(strcmp(getChessgameSanMoves(game1), getChessgameSanMoves(game2)) > 0);
+    PG_RETURN_BOOL(lessThan(game2, game1));
+}
+
+Datum chessgame_gte(PG_FUNCTION_ARGS)
+{
+    chessgame *game1 = (chessgame *)PG_GETARG_POINTER(0);
+    chessgame *game2 = (chessgame *)PG_GETARG_POINTER(1);
+    PG_FREE_IF_COPY(game1, 0);
+    PG_FREE_IF_COPY(game2, 1);
+    PG_RETURN_BOOL(lessThan(game2, game1) || strcmp(getChessgameSanMoves(game1), getChessgameSanMoves(game2)) == 0);
 }
 
 Datum chessgame_cmp(PG_FUNCTION_ARGS)

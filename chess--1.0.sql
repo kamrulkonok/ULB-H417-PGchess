@@ -146,11 +146,12 @@ CREATE FUNCTION chessgame_send(chessgame) RETURNS bytea
  ******************************************************************************/
 
 CREATE TYPE chessgame (
-  internallength = -1,
   input          = chessgame_in,
   output         = chessgame_out,
   receive        = chessgame_recv,
-  send           = chessgame_send
+  send           = chessgame_send,
+  alignment      = int4,
+  internallength = 2048
 );
 
 
@@ -168,19 +169,19 @@ CREATE CAST (text AS chessgame)
 
 CREATE FUNCTION getBoard(chessgame, integer)
 RETURNS text AS 'MODULE_PATHNAME', 'getBoard'
-LANGUAGE C STABLE STRICT PARALLEL SAFE;
+LANGUAGE C IMMUTABLE STRICT PARALLEL SAFE;
 
 CREATE FUNCTION getFirstMoves(chessgame, integer)
 RETURNS text AS 'MODULE_PATHNAME', 'getFirstMoves'
-LANGUAGE C STABLE STRICT PARALLEL SAFE;
+LANGUAGE C IMMUTABLE STRICT PARALLEL SAFE;
 
 CREATE FUNCTION hasOpening(chessgame, chessgame)
 RETURNS boolean AS 'MODULE_PATHNAME', 'hasOpening'
-LANGUAGE C STABLE STRICT PARALLEL SAFE;
+LANGUAGE C IMMUTABLE STRICT PARALLEL SAFE;
 
 CREATE FUNCTION hasBoard(chessgame, chessboard, integer)
 RETURNS boolean AS 'MODULE_PATHNAME', 'hasBoard'
-LANGUAGE C STABLE STRICT PARALLEL SAFE;
+LANGUAGE C IMMUTABLE STRICT PARALLEL SAFE;
 
 /******************************************************************************
  * B Tree Index for hasBoard
@@ -199,11 +200,6 @@ CREATE FUNCTION chessgame_lte(chessgame, chessgame)
 CREATE FUNCTION chessgame_eq(chessgame, chessgame)
   RETURNS boolean
   AS 'MODULE_PATHNAME', 'chessgame_eq'
-  LANGUAGE C IMMUTABLE STRICT PARALLEL SAFE;
-
-CREATE FUNCTION chessgame_neq(chessgame, chessgame)
-  RETURNS boolean
-  AS 'MODULE_PATHNAME', 'chessgame_neq'
   LANGUAGE C IMMUTABLE STRICT PARALLEL SAFE;
 
 CREATE FUNCTION chessgame_gte(chessgame, chessgame)
@@ -227,14 +223,6 @@ CREATE OPERATOR = (
     PROCEDURE = chessgame_eq,
     COMMUTATOR = =,
     NEGATOR = <>
-);
-
-CREATE OPERATOR <> (
-    LEFTARG = chessgame,
-    RIGHTARG = chessgame,
-    PROCEDURE = chessgame_neq,
-    COMMUTATOR = <>,
-    NEGATOR = =
 );
 
 CREATE OPERATOR < (
