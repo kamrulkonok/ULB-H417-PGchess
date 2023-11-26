@@ -150,8 +150,7 @@ CREATE TYPE chessgame (
   output         = chessgame_out,
   receive        = chessgame_recv,
   send           = chessgame_send,
-  alignment      = int4,
-  internallength = 2048
+  internallength = -1
 );
 
 
@@ -175,16 +174,12 @@ CREATE FUNCTION getFirstMoves(chessgame, integer)
 RETURNS text AS 'MODULE_PATHNAME', 'getFirstMoves'
 LANGUAGE C IMMUTABLE STRICT PARALLEL SAFE;
 
-CREATE FUNCTION hasOpening(chessgame, chessgame)
-RETURNS boolean AS 'MODULE_PATHNAME', 'hasOpening'
-LANGUAGE C IMMUTABLE STRICT PARALLEL SAFE;
-
 CREATE FUNCTION hasBoard(chessgame, chessboard, integer)
 RETURNS boolean AS 'MODULE_PATHNAME', 'hasBoard'
 LANGUAGE C IMMUTABLE STRICT PARALLEL SAFE;
 
 /******************************************************************************
- * B Tree Index for hasBoard
+ * B Tree Index for hasOpening
  ******************************************************************************/
 
 CREATE FUNCTION chessgame_lt(chessgame, chessgame)
@@ -265,3 +260,8 @@ CREATE OPERATOR CLASS chessgame_ops
         OPERATOR        4       >= ,
         OPERATOR        5       > ,
         FUNCTION        1       chessgame_cmp(chessgame, chessgame);
+
+CREATE OR REPLACE FUNCTION hasOpening(game1 chessgame, game2 chessgame)
+RETURNS boolean AS $$
+  SELECT game2 <= game1;
+$$ LANGUAGE sql IMMUTABLE STRICT PARALLEL SAFE;
