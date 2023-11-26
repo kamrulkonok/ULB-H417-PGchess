@@ -1,0 +1,5 @@
+# chess extension
+comment = 'chess datatype and functions'
+default_version = '1.0'
+relocatable = true
+module_pathname = '$libdir/chess'
