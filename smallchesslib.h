@@ -37,8 +37,6 @@
 */
 
 #include <stdint.h>
-#include <stdlib.h>
-#include <string.h>
 
 #ifndef SCL_DEBUG_AI
 /** AI will print out a Newick-like tree of searched moves. */
@@ -694,21 +692,9 @@ void SCL_printBoardSimple(
     uint8_t selectSquare,
     uint8_t format);
 
-typedef struct
-{
-  char *buffer;
-  size_t capacity;
-  size_t length;
-} SCL_StringBuilder;
-
-SCL_StringBuilder *SCL_createStringBuilder();
-char *SCL_finalizeStringBuilder(SCL_StringBuilder *sb);
-void SCL_appendChar(SCL_StringBuilder *sb, char c);
-
 void SCL_printSquareUTF8(uint8_t square, SCL_PutCharFunction putCharFunc);
-char *appendCharToBuffer(char c, char *buffer, size_t *bufferIndex, size_t *bufferSize);
-char *SCL_printPGN(SCL_Record r);
-
+void SCL_printPGN(SCL_Record r, SCL_PutCharFunction putCharFunc,
+                  SCL_Board initialState);
 /**
   Reads a move from string (the notation format is described at the top of this
   file). The function is safe as long as the string is 0 terminated. Returns 1
@@ -3574,16 +3560,21 @@ uint8_t SCL_boardMoveResetsCount(SCL_Board board,
          board[squareTo] != '.';
 }
 
-char *SCL_printPGN(SCL_Record r)
+void SCL_printPGN(SCL_Record r, SCL_PutCharFunction putCharFunc,
+                  SCL_Board initialState)
 {
   if (SCL_recordLength(r) == 0)
-    return NULL;
-
-  SCL_StringBuilder *sb = SCL_createStringBuilder();
+    return;
 
   uint16_t pos = 0;
+
   SCL_Board board;
-  SCL_boardInit(board);
+
+  if (initialState != 0)
+    for (uint8_t i = 0; i < SCL_BOARD_STATE_SIZE; ++i)
+      board[i] = initialState[i];
+  else
+    SCL_boardInit(board);
 
   while (1)
   {
@@ -3599,20 +3590,15 @@ char *SCL_printPGN(SCL_Record r)
       uint8_t move = pos / 2 + 1;
 
       if (move / 100 != 0)
-        SCL_appendChar(sb, '0' + move / 100);
-      // putCharFunc('0' + move / 100);
+        putCharFunc('0' + move / 100);
 
       if (move / 10 != 0 || move / 100 != 0)
-        SCL_appendChar(sb, '0' + (move % 100) / 10);
-      // putCharFunc('0' + (move % 100) / 10);
+        putCharFunc('0' + (move % 100) / 10);
 
-      SCL_appendChar(sb, '0' + move % 10);
-      // putCharFunc('0' + move % 10);
+      putCharFunc('0' + move % 10);
 
-      SCL_appendChar(sb, '.');
-      // putCharFunc('.');
-      SCL_appendChar(sb, ' ');
-      // putCharFunc(' ');
+      putCharFunc('.');
+      putCharFunc(' ');
     }
 
 #if !SCL_960_CASTLING
@@ -3623,12 +3609,9 @@ char *SCL_printPGN(SCL_Record r)
         (board[s0] == 'k' && board[s1] == 'r'))
 #endif
     {
-      SCL_appendChar(sb, 'O');
-      // putCharFunc('O');
-      SCL_appendChar(sb, '-');
-      // putCharFunc('-');
-      SCL_appendChar(sb, 'O');
-      // putCharFunc('O');
+      putCharFunc('O');
+      putCharFunc('-');
+      putCharFunc('O');
 
 #if !SCL_960_CASTLING
       if (s1 == 58 || s1 == 2)
@@ -3637,10 +3620,8 @@ char *SCL_printPGN(SCL_Record r)
           (s1 == 56 + (board[SCL_BOARD_EXTRA_BYTE] & 0x07)))
 #endif
       {
-        SCL_appendChar(sb, '-');
-        // putCharFunc('-');
-        SCL_appendChar(sb, 'O');
-        // putCharFunc('O');
+        putCharFunc('-');
+        putCharFunc('O');
       }
     }
     else
@@ -3649,8 +3630,7 @@ char *SCL_printPGN(SCL_Record r)
 
       if (!pawn)
       {
-        SCL_appendChar(sb, SCL_pieceToColor(board[s0], 1));
-        // putCharFunc(SCL_pieceToColor(board[s0], 1));
+        putCharFunc(SCL_pieceToColor(board[s0], 1));
 
         // disambiguation:
 
@@ -3670,36 +3650,28 @@ char *SCL_printPGN(SCL_Record r)
           }
 
         if (specify & 0x01)
-          SCL_appendChar(sb, 'a' + s0 % 8);
-        // putCharFunc('a' + s0 % 8);
+          putCharFunc('a' + s0 % 8);
 
         if (specify & 0x02)
-          SCL_appendChar(sb, '1' + s0 / 8);
-        // putCharFunc('1' + s0 / 8);
+          putCharFunc('1' + s0 / 8);
       }
 
       if (board[s1] != '.' ||
           (pawn && s0 % 8 != s1 % 8 && board[s1] == '.')) // capture?
       {
         if (pawn)
-          SCL_appendChar(sb, 'a' + s0 % 8);
-        // putCharFunc('a' + s0 % 8);
+          putCharFunc('a' + s0 % 8);
 
-        SCL_appendChar(sb, 'x');
-        // putCharFunc('x');
+        putCharFunc('x');
       }
 
-      SCL_appendChar(sb, 'a' + s1 % 8);
-      // putCharFunc('a' + s1 % 8);
-      SCL_appendChar(sb, '1' + s1 / 8);
-      // putCharFunc('1' + s1 / 8);
+      putCharFunc('a' + s1 % 8);
+      putCharFunc('1' + s1 / 8);
 
       if (pawn && (s1 >= 56 || s1 <= 7)) // promotion?
       {
-        SCL_appendChar(sb, '=');
-        // putCharFunc('=');
-        SCL_appendChar(sb, SCL_pieceToColor(p, 1));
-        // putCharFunc(SCL_pieceToColor(p, 1));
+        putCharFunc('=');
+        putCharFunc(SCL_pieceToColor(p, 1));
       }
     }
 
@@ -3708,165 +3680,22 @@ char *SCL_printPGN(SCL_Record r)
     uint8_t position = SCL_boardGetPosition(board);
 
     if (position == SCL_POSITION_CHECK)
-      SCL_appendChar(sb, '+');
-    // putCharFunc('+');
+      putCharFunc('+');
 
     if (position == SCL_POSITION_MATE)
     {
-      SCL_appendChar(sb, '#');
-      // putCharFunc('#');
+      putCharFunc('#');
       break;
     }
     else if (state != SCL_RECORD_CONT)
     {
-      // putCharFunc('*');
+      putCharFunc('*');
       break;
     }
 
-    SCL_appendChar(sb, ' ');
-    // putCharFunc(' ');
+    putCharFunc(' ');
   }
-  char *result = SCL_finalizeStringBuilder(sb);
-  return result;
 }
-
-// char *SCL_printPGN(SCL_Record r)
-// {
-
-//   if (SCL_recordLength(r) == 0)
-//   {
-//     return NULL;
-//   }
-
-//   uint16_t pos = 0;
-//   SCL_Board board;
-//   SCL_boardInit(board);
-
-//   size_t bufferIndex = 0;
-//   size_t bufferSize = 0;
-//   char *buffer = NULL;
-
-//   while (1)
-//   {
-//     uint8_t s0, s1;
-//     char p;
-
-//     uint8_t state = SCL_recordGetMove(r, pos, &s0, &s1, &p);
-
-//     pos++;
-
-//     if (pos % 2)
-//     {
-//       uint8_t move = pos / 2 + 1;
-
-//       if (move / 100 != 0)
-//         buffer = appendCharToBuffer('0' + move / 100, buffer, &bufferIndex, &bufferSize);
-
-//       if (move / 10 != 0 || move / 100 != 0)
-//         buffer = appendCharToBuffer('0' + (move % 100) / 10, buffer, &bufferIndex, &bufferSize);
-
-//       buffer = appendCharToBuffer('0' + move % 10, buffer, &bufferIndex, &bufferSize);
-
-//       buffer = appendCharToBuffer('.', buffer, &bufferIndex, &bufferSize);
-//       buffer = appendCharToBuffer(' ', buffer, &bufferIndex, &bufferSize);
-//     }
-
-// #if !SCL_960_CASTLING
-//     if ((board[s0] == 'K' && s0 == 4 && (s1 == 2 || s1 == 6)) ||
-//         (board[s0] == 'k' && s0 == 60 && (s1 == 62 || s1 == 58)))
-// #else
-//     if ((board[s0] == 'K' && board[s1] == 'R') ||
-//         (board[s0] == 'k' && board[s1] == 'r'))
-// #endif
-//     {
-//       buffer = appendCharToBuffer('O', buffer, &bufferIndex, &bufferSize);
-//       buffer = appendCharToBuffer('-', buffer, &bufferIndex, &bufferSize);
-//       buffer = appendCharToBuffer('O', buffer, &bufferIndex, &bufferSize);
-
-// #if !SCL_960_CASTLING
-//       if (s1 == 58 || s1 == 2)
-// #else
-//       if ((s1 == (board[SCL_BOARD_EXTRA_BYTE] & 0x07)) ||
-//           (s1 == 56 + (board[SCL_BOARD_EXTRA_BYTE] & 0x07)))
-// #endif
-//       {
-//         buffer = appendCharToBuffer('-', buffer, &bufferIndex, &bufferSize);
-//         buffer = appendCharToBuffer('O', buffer, &bufferIndex, &bufferSize);
-//       }
-//     }
-//     else
-//     {
-//       uint8_t pawn = board[s0] == 'P' || board[s0] == 'p';
-
-//       if (!pawn)
-//       {
-//         buffer = appendCharToBuffer(SCL_pieceToColor(board[s0], 1), buffer, &bufferIndex, &bufferSize);
-
-//         uint8_t specify = 0;
-
-//         for (int i = 0; i < SCL_BOARD_SQUARES; ++i)
-//           if (i != s0 && board[i] == board[s0])
-//           {
-//             SCL_SquareSet s;
-
-//             SCL_squareSetClear(s);
-
-//             SCL_boardGetMoves(board, i, s);
-
-//             if (SCL_squareSetContains(s, s1))
-//               specify |= (s0 % 8 != s1 % 8) ? 1 : 2;
-//           }
-
-//         if (specify & 0x01)
-//           buffer = appendCharToBuffer('a' + s0 % 8, buffer, &bufferIndex, &bufferSize);
-
-//         if (specify & 0x02)
-//           buffer = appendCharToBuffer('1' + s0 / 8, buffer, &bufferIndex, &bufferSize);
-//       }
-
-//       if (board[s1] != '.' ||
-//           (pawn && s0 % 8 != s1 % 8 && board[s1] == '.')) // capture?
-//       {
-//         if (pawn)
-//           buffer = appendCharToBuffer('a' + s0 % 8, buffer, &bufferIndex, &bufferSize);
-
-//         buffer = appendCharToBuffer('x', buffer, &bufferIndex, &bufferSize);
-//       }
-
-//       buffer = appendCharToBuffer('a' + s1 % 8, buffer, &bufferIndex, &bufferSize);
-
-//       buffer = appendCharToBuffer('1' + s1 % 8, buffer, &bufferIndex, &bufferSize);
-
-//       if (pawn && (s1 >= 56 || s1 <= 7)) // promotion?
-//       {
-//         buffer = appendCharToBuffer('=', buffer, &bufferIndex, &bufferSize);
-//         buffer = appendCharToBuffer(SCL_pieceToColor(p, 1), buffer, &bufferIndex, &bufferSize);
-//       }
-//     }
-
-//     SCL_boardMakeMove(board, s0, s1, p);
-
-//     uint8_t position = SCL_boardGetPosition(board);
-
-//     if (position == SCL_POSITION_CHECK)
-//       buffer = appendCharToBuffer('+', buffer, &bufferIndex, &bufferSize);
-
-//     if (position == SCL_POSITION_MATE)
-//     {
-//       buffer = appendCharToBuffer('#', buffer, &bufferIndex, &bufferSize);
-//       break;
-//     }
-//     else if (state != SCL_RECORD_CONT)
-//     {
-//       // appendCharToBuffer('*');
-//       break;
-//     }
-
-//     buffer = appendCharToBuffer(' ', buffer, &bufferIndex, &bufferSize);
-//   }
-//   buffer = appendCharToBuffer('\0', buffer, &bufferIndex, &bufferSize);
-//   return buffer;
-// }
 
 void SCL_recordCopy(SCL_Record recordFrom, SCL_Record recordTo)
 {
