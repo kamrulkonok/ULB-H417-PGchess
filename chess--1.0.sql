@@ -275,7 +275,7 @@ SELECT array_agg(i || ':' || query)
 FROM generate_series(0, n) as g(i)
 $$ LANGUAGE sql IMMUTABLE;
 
-CREATE OR REPLACE FUNCTION hasBoard(fenStates TEXT[], query TEXT, n INT)
+CREATE OR REPLACE FUNCTION hasBoard(game chessgame, query TEXT, n INT)
 RETURNS BOOLEAN AS $$
-SELECT fenStates && CREATE_QUERIES(query, n);
+SELECT getAllStates(game) && CREATE_QUERIES(query, n);
 $$ LANGUAGE sql IMMUTABLE;

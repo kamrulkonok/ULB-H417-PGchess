@@ -507,21 +507,14 @@ Datum getFirstMoves(PG_FUNCTION_ARGS)
     char *current = truncatedSanMoves;
     while (*current != '\0' && moveCount < nHalfMoves)
     {
+        // A half move is followed by a space
         if (*current == ' ')
         {
             moveCount++;
+            if (moveCount == nHalfMoves)
+                break;
         }
         current++;
-    }
-
-    // If current points to a space, we need to include this last half-move
-    if (*current == ' ' && moveCount == nHalfMoves)
-    {
-        current++;
-        while (*current != ' ' && *current != '\0')
-        {
-            current++;
-        }
     }
 
     // Truncate the string at the current position
