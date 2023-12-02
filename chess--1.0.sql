@@ -174,9 +174,7 @@ CREATE FUNCTION getFirstMoves(chessgame, integer)
 RETURNS text AS 'MODULE_PATHNAME', 'getFirstMoves'
 LANGUAGE C IMMUTABLE STRICT PARALLEL SAFE;
 
-CREATE FUNCTION hasBoard(chessgame, chessboard, integer)
-RETURNS boolean AS 'MODULE_PATHNAME', 'hasBoard'
-LANGUAGE C IMMUTABLE STRICT PARALLEL SAFE;
+
 
 /******************************************************************************
  * B Tree Index for hasOpening
@@ -265,3 +263,19 @@ CREATE OR REPLACE FUNCTION hasOpening(game1 chessgame, game2 chessgame)
 RETURNS boolean AS $$
   SELECT game2 <= game1;
 $$ LANGUAGE sql IMMUTABLE STRICT PARALLEL SAFE;
+
+-- Function to display the Array of chessgame states using `chessgame_get_all_states` as text[]
+CREATE FUNCTION getAllStates(chessgame)
+RETURNS text[] AS 'MODULE_PATHNAME', 'chessgame_get_all_states'
+LANGUAGE C IMMUTABLE STRICT PARALLEL SAFE;
+
+CREATE OR REPLACE FUNCTION CREATE_QUERIES(query TEXT, n INT)
+RETURNS TEXT[] AS $$
+SELECT array_agg(i || ':' || query)
+FROM generate_series(0, n) as g(i)
+$$ LANGUAGE sql IMMUTABLE;
+
+CREATE OR REPLACE FUNCTION hasBoard(game chessgame, query TEXT, n INT)
+RETURNS BOOLEAN AS $$
+SELECT getAllStates(game) && CREATE_QUERIES(query, n);
+$$ LANGUAGE sql IMMUTABLE;

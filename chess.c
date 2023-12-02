@@ -5,6 +5,9 @@
 #include <stdlib.h>
 #include <string.h>
 #include "lib/stringinfo.h"
+#include "utils/array.h"
+#include "catalog/pg_type.h"
+#include "utils/lsyscache.h"
 
 #include "utils/builtins.h"
 #include "libpq/pqformat.h"
@@ -330,6 +333,7 @@ PG_FUNCTION_INFO_V1(chessgame_neq);
 PG_FUNCTION_INFO_V1(chessgame_gte);
 PG_FUNCTION_INFO_V1(chessgame_gt);
 PG_FUNCTION_INFO_V1(chessgame_cmp);
+PG_FUNCTION_INFO_V1(chessgame_get_all_states);
 
 chessgame *create_chessgame(const char *SAN)
 {
@@ -503,21 +507,14 @@ Datum getFirstMoves(PG_FUNCTION_ARGS)
     char *current = truncatedSanMoves;
     while (*current != '\0' && moveCount < nHalfMoves)
     {
+        // A half move is followed by a space
         if (*current == ' ')
         {
             moveCount++;
+            if (moveCount == nHalfMoves)
+                break;
         }
         current++;
-    }
-
-    // If current points to a space, we need to include this last half-move
-    if (*current == ' ' && moveCount == nHalfMoves)
-    {
-        current++;
-        while (*current != ' ' && *current != '\0')
-        {
-            current++;
-        }
     }
 
     // Truncate the string at the current position
@@ -661,4 +658,57 @@ Datum chessgame_cmp(PG_FUNCTION_ARGS)
     PG_FREE_IF_COPY(game1, 0);
     PG_FREE_IF_COPY(game2, 1);
     PG_RETURN_INT32(result);
+}
+
+// return an array containing all the FEN states of the chessgame
+Datum chessgame_get_all_states(PG_FUNCTION_ARGS)
+{
+    if (PG_ARGISNULL(0))
+        ereport(ERROR,
+                (errcode(ERRCODE_NULL_VALUE_NOT_ALLOWED),
+                 errmsg("chessgame must not be null")));
+
+    chessgame *game = (chessgame *)PG_GETARG_POINTER(0);
+    int numHalfMoves = game->numHalfMoves;
+
+    // Create an array to store text representations of FEN states
+    Datum *fenStates = palloc(sizeof(Datum) * (numHalfMoves + 1));
+
+    // Populate the array with FEN states
+    for (int i = 0; i <= numHalfMoves; ++i)
+    {
+        char *fen = getChessgameBoard(game, i);
+        if (fen != NULL)
+        {
+            // prepend move number to FEN state like this "i:FEN"
+            // can be max 4 bytes (3 digit number and a colon)
+            char *fenWithMoveNumber = palloc(strlen(fen) + 4);
+            sprintf(fenWithMoveNumber, "%d:%s", i, fen);
+            pfree(fen);
+            // Convert C string to PostgreSQL text type
+            text *fenText = cstring_to_text(fenWithMoveNumber);
+            fenStates[i] = PointerGetDatum(fenText);
+        }
+        else
+        {
+            // Handle NULL FEN state
+            fenStates[i] = PointerGetDatum(cstring_to_text(""));
+        }
+    }
+
+    // Construct the array of text
+    int16 elemTyplen;
+    bool elemTypbyval;
+    char elemTypalign;
+    get_typlenbyvalalign(TEXTOID, &elemTyplen, &elemTypbyval, &elemTypalign);
+    ArrayType *resultArray = construct_array(fenStates, numHalfMoves, TEXTOID, elemTyplen, elemTypbyval, elemTypalign);
+
+    // Clean up
+    for (int i = 0; i < numHalfMoves; ++i)
+    {
+        pfree(DatumGetPointer(fenStates[i]));
+    }
+    pfree(fenStates);
+
+    PG_RETURN_ARRAYTYPE_P(resultArray);
 }

@@ -1,8 +1,6 @@
 .vscode/
 data/
-# all files prefixed with test
-test*
-san2fen.c
+test.c
 
 # Prerequisites
 *.d
