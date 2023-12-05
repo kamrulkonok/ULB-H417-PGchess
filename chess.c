@@ -18,13 +18,7 @@ PG_MODULE_MAGIC;
                                           Chessboard Structure
 ************************************************************************************************************/
 
-typedef struct
-{
-    // Length field including the size of the length field itself
-    int32 length;
-    // FEN string data
-    char fen[FLEXIBLE_ARRAY_MEMBER];
-} chessboard;
+typedef SCL_Board chessboard;
 
 // register the function as a PostgreSQL function that follows
 // version 1 calling conventions
@@ -34,19 +28,18 @@ PG_FUNCTION_INFO_V1(chessboard_recv);
 PG_FUNCTION_INFO_V1(chessboard_send);
 PG_FUNCTION_INFO_V1(chessboard_constructor);
 PG_FUNCTION_INFO_V1(chessboard_eq);
-PG_FUNCTION_INFO_V1(chessboard_lt);
-PG_FUNCTION_INFO_V1(chessboard_le);
-PG_FUNCTION_INFO_V1(chessboard_gt);
-PG_FUNCTION_INFO_V1(chessboard_ge);
 PG_FUNCTION_INFO_V1(chessboard_neq);
+PG_FUNCTION_INFO_V1(chessboard_lt);
+PG_FUNCTION_INFO_V1(chessboard_lte);
+PG_FUNCTION_INFO_V1(chessboard_gt);
+PG_FUNCTION_INFO_V1(chessboard_gte);
+PG_FUNCTION_INFO_V1(chessboard_to_text);
 
 chessboard *create_chessboard_from_fen(const char *fenStr)
 {
-    int len = strlen(fenStr) + VARHDRSZ;
-    chessboard *result = (chessboard *)palloc(len);
-    SET_VARSIZE(result, len);
-    memcpy(result->fen, fenStr, len - VARHDRSZ);
-    return result;
+    chessboard *board = (chessboard *)palloc(sizeof(chessboard));
+    SCL_boardFromFEN(*board, fenStr);
+    return board;
 }
 
 Datum chessboard_in(PG_FUNCTION_ARGS)
@@ -59,23 +52,21 @@ Datum chessboard_in(PG_FUNCTION_ARGS)
 Datum chessboard_out(PG_FUNCTION_ARGS)
 {
     chessboard *board = (chessboard *)PG_GETARG_POINTER(0);
-    char *fenStr = palloc(VARSIZE(board) - VARHDRSZ + 1); // +1 for null terminator
-    memcpy(fenStr, board->fen, VARSIZE(board) - VARHDRSZ);
-    fenStr[VARSIZE(board) - VARHDRSZ] = '\0';
+    char *fenStr = palloc(SCL_FEN_MAX_LENGTH);
+    SCL_boardToFEN(*board, fenStr);
+    PG_FREE_IF_COPY(board, 0);
     PG_RETURN_CSTRING(fenStr);
 }
 
 Datum chessboard_recv(PG_FUNCTION_ARGS)
 {
     StringInfo buf = (StringInfo)PG_GETARG_POINTER(0);
-    const char *str = pq_getmsgstring(buf);
-    int len = strlen(str) + VARHDRSZ;
-    chessboard *result = (chessboard *)palloc(len);
+    chessboard *board = (chessboard *)palloc(sizeof(chessboard));
 
-    SET_VARSIZE(result, len);
-    memcpy(result->fen, str, len - VARHDRSZ);
+    // Assuming the binary format is a direct copy of the SCL_Board
+    pq_copymsgbytes(buf, (char *)board, sizeof(chessboard));
 
-    PG_RETURN_POINTER(result);
+    PG_RETURN_POINTER(board);
 }
 
 Datum chessboard_send(PG_FUNCTION_ARGS)
@@ -84,77 +75,61 @@ Datum chessboard_send(PG_FUNCTION_ARGS)
     StringInfoData buf;
 
     pq_begintypsend(&buf);
-    pq_sendstring(&buf, board->fen);
+    pq_sendbytes(&buf, (char *)board, sizeof(chessboard));
 
     PG_RETURN_BYTEA_P(pq_endtypsend(&buf));
 }
 
-Datum chessboard_constructor(PG_FUNCTION_ARGS)
-{
-    // Get the text input (FEN string)
-    text *fenText = PG_GETARG_TEXT_PP(0);
-    // Convert the text input to a C string
-    char *fenStr = text_to_cstring(fenText);
-    // Calculate the total length of the chessboard structure
-    int len = strlen(fenStr) + VARHDRSZ;
-    // Allocate memory for the chessboard structure
-    chessboard *result = (chessboard *)palloc(len);
-    // Set the size of the chessboard structure
-    SET_VARSIZE(result, len);
-    // Copy the FEN string into the structure
-    memcpy(result->fen, fenStr, len - VARHDRSZ);
-    // Return the new chessboard structure
-    PG_RETURN_POINTER(result);
-}
-
 Datum chessboard_eq(PG_FUNCTION_ARGS)
 {
-    // Get the two chessboard structures
     chessboard *board1 = (chessboard *)PG_GETARG_POINTER(0);
     chessboard *board2 = (chessboard *)PG_GETARG_POINTER(1);
-    // Compare the two FEN strings
-    PG_RETURN_BOOL(strcmp(board1->fen, board2->fen) == 0);
+    PG_RETURN_BOOL(strcmp(*board1, *board2) == 0);
 }
 
 Datum chessboard_neq(PG_FUNCTION_ARGS)
 {
-    // Get the two chessboard structures
     chessboard *board1 = (chessboard *)PG_GETARG_POINTER(0);
     chessboard *board2 = (chessboard *)PG_GETARG_POINTER(1);
-    // Compare the two FEN strings
-    PG_RETURN_BOOL(strcmp(board1->fen, board2->fen) != 0);
+    PG_RETURN_BOOL(strcmp(*board1, *board2) != 0);
 }
 
 Datum chessboard_lt(PG_FUNCTION_ARGS)
 {
     chessboard *board1 = (chessboard *)PG_GETARG_POINTER(0);
     chessboard *board2 = (chessboard *)PG_GETARG_POINTER(1);
-
-    PG_RETURN_BOOL(strcmp(board1->fen, board2->fen) < 0);
+    PG_RETURN_BOOL(strcmp(*board1, *board2) < 0);
 }
 
-Datum chessboard_le(PG_FUNCTION_ARGS)
+Datum chessboard_lte(PG_FUNCTION_ARGS)
 {
     chessboard *board1 = (chessboard *)PG_GETARG_POINTER(0);
     chessboard *board2 = (chessboard *)PG_GETARG_POINTER(1);
-
-    PG_RETURN_BOOL(strcmp(board1->fen, board2->fen) <= 0);
+    PG_RETURN_BOOL(strcmp(*board1, *board2) <= 0);
 }
 
 Datum chessboard_gt(PG_FUNCTION_ARGS)
 {
     chessboard *board1 = (chessboard *)PG_GETARG_POINTER(0);
     chessboard *board2 = (chessboard *)PG_GETARG_POINTER(1);
-
-    PG_RETURN_BOOL(strcmp(board1->fen, board2->fen) > 0);
+    PG_RETURN_BOOL(strcmp(*board1, *board2) > 0);
 }
 
-Datum chessboard_ge(PG_FUNCTION_ARGS)
+Datum chessboard_gte(PG_FUNCTION_ARGS)
 {
     chessboard *board1 = (chessboard *)PG_GETARG_POINTER(0);
     chessboard *board2 = (chessboard *)PG_GETARG_POINTER(1);
+    PG_RETURN_BOOL(strcmp(*board1, *board2) >= 0);
+}
 
-    PG_RETURN_BOOL(strcmp(board1->fen, board2->fen) >= 0);
+Datum chessboard_to_text(PG_FUNCTION_ARGS)
+{
+    chessboard *board = (chessboard *)PG_GETARG_POINTER(0);
+    char *fenStr = palloc(SCL_FEN_MAX_LENGTH);
+    SCL_boardToFEN(*board, fenStr);
+    text *result = cstring_to_text(fenStr);
+    PG_FREE_IF_COPY(board, 0);
+    PG_RETURN_TEXT_P(result);
 }
 
 /************************************************************************************************************
@@ -529,30 +504,6 @@ Datum getFirstMoves(PG_FUNCTION_ARGS)
     pfree(truncatedSanMoves);
     pfree(sanMovesWithNumbers);
     PG_RETURN_TEXT_P(result);
-}
-
-Datum hasBoard(PG_FUNCTION_ARGS)
-{
-    if (PG_ARGISNULL(0) || PG_ARGISNULL(1) || PG_ARGISNULL(2))
-        ereport(ERROR,
-                (errcode(ERRCODE_NULL_VALUE_NOT_ALLOWED),
-                 errmsg("Arguments must not be null")));
-
-    chessgame *game = (chessgame *)PG_GETARG_POINTER(0);
-    chessboard *board = (chessboard *)PG_GETARG_POINTER(1);
-    int nHalfMoves = PG_GETARG_INT32(2);
-
-    char *boardFen = board->fen;
-    bool found = false;
-
-    for (int i = 0; i <= nHalfMoves && !found; ++i)
-    {
-        char *currentFen = getChessgameBoard(game, i);
-        if (currentFen != NULL && strcmp(boardFen, currentFen) == 0)
-            found = true;
-    }
-
-    PG_RETURN_BOOL(found);
 }
 
 /**

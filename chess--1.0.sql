@@ -34,55 +34,22 @@ CREATE OR REPLACE FUNCTION chessboard_send(chessboard)
  ******************************************************************************/
 
 CREATE TYPE chessboard (
-  internallength = -1,
+  internallength = 69,
   input          = chessboard_in,
   output         = chessboard_out,
   receive        = chessboard_recv,
-  send           = chessboard_send
+  send           = chessboard_send,
+  alignment      = char
 );
-
-/******************************************************************************
- * Constructor
- ******************************************************************************/
-
-CREATE OR REPLACE FUNCTION chessboard(fen text)
-  RETURNS chessboard
-  AS 'MODULE_PATHNAME', 'chessboard_constructor'
-  LANGUAGE C IMMUTABLE STRICT PARALLEL SAFE;
 
 
 /******************************************************************************
  * Operators
  ******************************************************************************/
 
-CREATE FUNCTION chessboard_eq(chessboard, chessboard)
+CREATE OR REPLACE FUNCTION chessboard_eq(chessboard, chessboard)
   RETURNS boolean
-  AS 'MODULE_PATHNAME', 'chessboard_eq'
-  LANGUAGE C IMMUTABLE STRICT PARALLEL SAFE;
-
-CREATE FUNCTION chessboard_neq(chessboard, chessboard)
-  RETURNS boolean
-  AS 'MODULE_PATHNAME', 'chessboard_neq'
-  LANGUAGE C IMMUTABLE STRICT PARALLEL SAFE;
-
-CREATE FUNCTION chessboard_lt(chessboard, chessboard)
-  RETURNS boolean
-  AS 'MODULE_PATHNAME', 'chessboard_lt'
-  LANGUAGE C IMMUTABLE STRICT PARALLEL SAFE;
-
-CREATE FUNCTION chessboard_le(chessboard, chessboard)
-  RETURNS boolean
-  AS 'MODULE_PATHNAME', 'chessboard_le'
-  LANGUAGE C IMMUTABLE STRICT PARALLEL SAFE;
-
-CREATE FUNCTION chessboard_gt(chessboard, chessboard)
-  RETURNS boolean
-  AS 'MODULE_PATHNAME', 'chessboard_gt'
-  LANGUAGE C IMMUTABLE STRICT PARALLEL SAFE;
-
-CREATE FUNCTION chessboard_ge(chessboard, chessboard)
-  RETURNS boolean
-  AS 'MODULE_PATHNAME', 'chessboard_ge'
+  AS 'MODULE_PATHNAME'
   LANGUAGE C IMMUTABLE STRICT PARALLEL SAFE;
 
 CREATE OPERATOR = (
@@ -91,31 +58,69 @@ CREATE OPERATOR = (
   COMMUTATOR = =, NEGATOR = <>
 );
 
+CREATE OR REPLACE FUNCTION chessboard_neq(chessboard, chessboard)
+  RETURNS boolean
+  AS 'MODULE_PATHNAME'
+  LANGUAGE C IMMUTABLE STRICT PARALLEL SAFE;
+
 CREATE OPERATOR <> (
   LEFTARG = chessboard, RIGHTARG = chessboard,
   PROCEDURE = chessboard_neq,
   COMMUTATOR = <>, NEGATOR = =
 );
 
+CREATE OR REPLACE FUNCTION chessboard_lt(chessboard, chessboard)
+  RETURNS boolean
+  AS 'MODULE_PATHNAME'
+  LANGUAGE C IMMUTABLE STRICT PARALLEL SAFE;
+
 CREATE OPERATOR < (
   LEFTARG = chessboard, RIGHTARG = chessboard,
-  PROCEDURE = chessboard_lt
+  PROCEDURE = chessboard_lt,
+  COMMUTATOR = >, NEGATOR = >=
 );
+
+CREATE OR REPLACE FUNCTION chessboard_lte(chessboard, chessboard)
+  RETURNS boolean
+  AS 'MODULE_PATHNAME'
+  LANGUAGE C IMMUTABLE STRICT PARALLEL SAFE;
 
 CREATE OPERATOR <= (
   LEFTARG = chessboard, RIGHTARG = chessboard,
-  PROCEDURE = chessboard_le
+  PROCEDURE = chessboard_lte,
+  COMMUTATOR = >=, NEGATOR = <
 );
+
+CREATE OR REPLACE FUNCTION chessboard_gt(chessboard, chessboard)
+  RETURNS boolean
+  AS 'MODULE_PATHNAME'
+  LANGUAGE C IMMUTABLE STRICT PARALLEL SAFE;
 
 CREATE OPERATOR > (
   LEFTARG = chessboard, RIGHTARG = chessboard,
-  PROCEDURE = chessboard_gt
+  PROCEDURE = chessboard_gt,
+  COMMUTATOR = <, NEGATOR = <=
 );
+
+CREATE OR REPLACE FUNCTION chessboard_gte(chessboard, chessboard)
+  RETURNS boolean
+  AS 'MODULE_PATHNAME'
+  LANGUAGE C IMMUTABLE STRICT PARALLEL SAFE;
 
 CREATE OPERATOR >= (
   LEFTARG = chessboard, RIGHTARG = chessboard,
-  PROCEDURE = chessboard_ge
+  PROCEDURE = chessboard_gte,
+  COMMUTATOR = <=, NEGATOR = >
 );
+
+CREATE FUNCTION chessboard_to_text(chessboard) RETURNS text
+    AS 'MODULE_PATHNAME'
+    LANGUAGE C IMMUTABLE STRICT PARALLEL SAFE;
+
+CREATE CAST (chessboard AS text)
+    WITH FUNCTION chessboard_to_text(chessboard)
+    AS IMPLICIT;
+
 
 /************************************************************************************************************
                                           Chessgame to represent SAN and FEN states
@@ -126,19 +131,19 @@ CREATE OPERATOR >= (
  ******************************************************************************/
 
 CREATE FUNCTION chessgame_in(cstring) RETURNS chessgame
-    AS 'MODULE_PATHNAME', 'chessgame_in'
+    AS 'MODULE_PATHNAME'
     LANGUAGE C IMMUTABLE STRICT PARALLEL SAFE;
 
 CREATE FUNCTION chessgame_out(chessgame) RETURNS cstring
-    AS 'MODULE_PATHNAME', 'chessgame_out'
+    AS 'MODULE_PATHNAME'
     LANGUAGE C IMMUTABLE STRICT PARALLEL SAFE;
 
 CREATE FUNCTION chessgame_recv(internal) RETURNS chessgame
-    AS 'MODULE_PATHNAME', 'chessgame_recv'
+    AS 'MODULE_PATHNAME'
     LANGUAGE C IMMUTABLE STRICT PARALLEL SAFE;
 
 CREATE FUNCTION chessgame_send(chessgame) RETURNS bytea
-    AS 'MODULE_PATHNAME', 'chessgame_send'
+    AS 'MODULE_PATHNAME'
     LANGUAGE C IMMUTABLE STRICT PARALLEL SAFE;
 
 /******************************************************************************
@@ -155,7 +160,7 @@ CREATE TYPE chessgame (
 
 
 CREATE FUNCTION text_to_chessgame(text) RETURNS chessgame
-    AS 'MODULE_PATHNAME', 'text_to_chessgame'
+    AS 'MODULE_PATHNAME'
     LANGUAGE C STRICT;
 
 CREATE CAST (text AS chessgame)
@@ -275,7 +280,7 @@ SELECT array_agg(i || ':' || query)
 FROM generate_series(0, n) as g(i)
 $$ LANGUAGE sql IMMUTABLE;
 
-CREATE OR REPLACE FUNCTION hasBoard(game chessgame, query TEXT, n INT)
+CREATE OR REPLACE FUNCTION hasBoard(game chessgame, fen chessboard, n INT)
 RETURNS BOOLEAN AS $$
-SELECT getAllStates(game) && CREATE_QUERIES(query, n);
+SELECT getAllStates(game) && CREATE_QUERIES(fen, n);
 $$ LANGUAGE sql IMMUTABLE;

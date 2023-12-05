@@ -12,9 +12,16 @@ COPY chessgames(game) FROM '/mnt/e/Documents/BDMA/ULB/DBSA/project/ULB-H417-PGch
 UPDATE chessgames SET fenStates = getAllStates(game);
 CREATE INDEX fen_idx ON chessgames USING GIN(getAllStates(game));
 VACUUM ANALYZE chessgames;
+-- ALTER TABLE chessgames DROP COLUMN fenStates;
+
+EXPLAIN ANALYZE SELECT COUNT(*) FROM chessgames
+WHERE hasBoard(game, 'r1bqkbnr/pppp1ppp/2n5/4p3/4P3/5N2/PPPP1PPP/RNBQKB1R w KQkq - 2 3', 4);
+
+EXPLAIN ANALYZE SELECT COUNT(*) FROM chessgames
+WHERE hasBoard(game, 'rnbqkbnr/pppppppp/8/8/4P3/8/PPPP1PPP/RNBQKBNR b KQkq e3 0 1', 1);
 
 SELECT COUNT(*) FROM chessgames
-WHERE hasBoard(fenStates, 'rnbqkbnr/pppppppp/8/8/4P3/8/PPPP1PPP/RNBQKBNR b KQkq e3 0 1'::chessboard, 1);
-
-EXPLAIN SELECT * FROM chessgames
 WHERE hasBoard(game, 'r1bqkbnr/pppp1ppp/2n5/4p3/4P3/5N2/PPPP1PPP/RNBQKB1R w KQkq - 2 3', 4);
+
+SELECT COUNT(*) FROM chessgames
+WHERE hasBoard(game, 'rnbqkbnr/pppppppp/8/8/4P3/8/PPPP1PPP/RNBQKBNR b KQkq e3 0 1', 1);
