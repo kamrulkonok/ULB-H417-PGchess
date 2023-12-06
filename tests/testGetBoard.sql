@@ -10,6 +10,7 @@ CREATE TABLE chessgames (
 -- Insert a sample chessgame
 INSERT INTO chessgames (game)
 VALUES ('1.e4 e5 2.Nf3 Nc6 3.Bb5 a6'::chessgame);
+SELECT * FROM chessgames;
 
 -- Test the getBoard function
 SELECT getBoard(game, 0) as initial_board FROM chessgames;

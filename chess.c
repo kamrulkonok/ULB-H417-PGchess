@@ -249,7 +249,7 @@ char *addMoveNumbers(const char *processedSAN, int size)
 typedef struct
 {
     char vl_len_[4];
-    int32 numHalfMoves;
+    uint8 numHalfMoves;
     // following this is the SAN moves string
     // we don't store it inside the struct because it is variable length
 } chessgame;
@@ -320,7 +320,7 @@ chessgame *create_chessgame(const char *SAN)
     // calculate the number of half moves
     SCL_Record r;
     SCL_recordFromPGN(r, sanMovesStr);
-    int numHalfMoves = SCL_recordLength(r);
+    uint16_t numHalfMoves = SCL_recordLength(r);
     // we store the SAN without the numbers to save space
     int sanMovesLen = calculateShortSANLength(numHalfMoves, strlen(sanMovesStr)) + 1;
     // create a shorter SAN without the move numbers
@@ -330,9 +330,9 @@ chessgame *create_chessgame(const char *SAN)
     // Calculate total size required for chessgame and all FEN strings
     int totalSize = sizeof(chessgame) + sanMovesLen;
     // Allocate memory
-    game = (chessgame *)palloc0(totalSize + VARHDRSZ);
-    // Set the total size including the header size
-    SET_VARSIZE(game, totalSize + VARHDRSZ);
+    game = (chessgame *)palloc0(totalSize);
+    // Set the total size
+    SET_VARSIZE(game, totalSize);
     // Set the numHalfMoves property
     game->numHalfMoves = numHalfMoves;
     // Copy the SAN moves string
@@ -377,15 +377,15 @@ Datum chessgame_recv(PG_FUNCTION_ARGS)
 {
     StringInfo buf = (StringInfo)PG_GETARG_POINTER(0);
     const char *sanMovesStr = pq_getmsgstring(buf);
-    int numHalfMoves = pq_getmsgint(buf, sizeof(int32));
+    uint8 numHalfMoves = pq_getmsgint(buf, sizeof(uint8));
 
     // Calculate total size for the chessgame structure and SAN moves string
     int sanMovesLen = strlen(sanMovesStr) + 1;
     int totalSize = sizeof(chessgame) + sanMovesLen;
 
     // Allocate memory
-    chessgame *game = (chessgame *)palloc0(totalSize + VARHDRSZ);
-    SET_VARSIZE(game, totalSize + VARHDRSZ);
+    chessgame *game = (chessgame *)palloc0(totalSize);
+    SET_VARSIZE(game, totalSize);
     game->numHalfMoves = numHalfMoves;
 
     // Copy SAN moves string
@@ -402,7 +402,7 @@ Datum chessgame_send(PG_FUNCTION_ARGS)
     StringInfoData buf;
     pq_begintypsend(&buf);
 
-    pq_sendint(&buf, game->numHalfMoves, sizeof(int32));
+    pq_sendint(&buf, game->numHalfMoves, sizeof(uint8));
     char *sanMovesStr = getChessgameSanMoves(game);
     pq_sendstring(&buf, sanMovesStr);
 
@@ -455,6 +455,7 @@ Datum getBoard(PG_FUNCTION_ARGS)
         PG_RETURN_NULL();
 
     text *result = cstring_to_text(fen);
+    PG_FREE_IF_COPY(game, 0);
     PG_RETURN_TEXT_P(result);
 }
 
@@ -503,6 +504,7 @@ Datum getFirstMoves(PG_FUNCTION_ARGS)
     // Free the memory allocated by the helper functions
     pfree(truncatedSanMoves);
     pfree(sanMovesWithNumbers);
+    PG_FREE_IF_COPY(game, 0);
     PG_RETURN_TEXT_P(result);
 }
 
@@ -537,10 +539,10 @@ Datum chessgame_lt(PG_FUNCTION_ARGS)
 {
     chessgame *game1 = (chessgame *)PG_GETARG_POINTER(0);
     chessgame *game2 = (chessgame *)PG_GETARG_POINTER(1);
-
+    bool result = lessThan(game1, game2);
     PG_FREE_IF_COPY(game1, 0);
     PG_FREE_IF_COPY(game2, 1);
-    PG_RETURN_BOOL(lessThan(game1, game2));
+    PG_RETURN_BOOL(result);
 }
 
 Datum chessgame_lte(PG_FUNCTION_ARGS)
@@ -549,36 +551,40 @@ Datum chessgame_lte(PG_FUNCTION_ARGS)
     char *SAN1 = getChessgameSanMoves(game1);
     chessgame *game2 = (chessgame *)PG_GETARG_POINTER(1);
     char *SAN2 = getChessgameSanMoves(game2);
+    bool result = lessThan(game1, game2) || strcmp(SAN1, SAN2) == 0;
     PG_FREE_IF_COPY(game1, 0);
     PG_FREE_IF_COPY(game2, 1);
-    PG_RETURN_BOOL(lessThan(game1, game2) || strcmp(SAN1, SAN2) == 0);
+    PG_RETURN_BOOL(result);
 }
 
 Datum chessgame_eq(PG_FUNCTION_ARGS)
 {
     chessgame *game1 = (chessgame *)PG_GETARG_POINTER(0);
     chessgame *game2 = (chessgame *)PG_GETARG_POINTER(1);
+    bool result = strcmp(getChessgameSanMoves(game1), getChessgameSanMoves(game2)) == 0;
     PG_FREE_IF_COPY(game1, 0);
     PG_FREE_IF_COPY(game2, 1);
-    PG_RETURN_BOOL(strcmp(getChessgameSanMoves(game1), getChessgameSanMoves(game2)) == 0);
+    PG_RETURN_BOOL(result);
 }
 
 Datum chessgame_neq(PG_FUNCTION_ARGS)
 {
     chessgame *game1 = (chessgame *)PG_GETARG_POINTER(0);
     chessgame *game2 = (chessgame *)PG_GETARG_POINTER(1);
+    bool result = strcmp(getChessgameSanMoves(game1), getChessgameSanMoves(game2)) != 0;
     PG_FREE_IF_COPY(game1, 0);
     PG_FREE_IF_COPY(game2, 1);
-    PG_RETURN_BOOL(strcmp(getChessgameSanMoves(game1), getChessgameSanMoves(game2)) != 0);
+    PG_RETURN_BOOL(result);
 }
 
 Datum chessgame_gt(PG_FUNCTION_ARGS)
 {
     chessgame *game1 = (chessgame *)PG_GETARG_POINTER(0);
     chessgame *game2 = (chessgame *)PG_GETARG_POINTER(1);
+    bool result = lessThan(game2, game1);
     PG_FREE_IF_COPY(game1, 0);
     PG_FREE_IF_COPY(game2, 1);
-    PG_RETURN_BOOL(lessThan(game2, game1));
+    PG_RETURN_BOOL(result);
 }
 
 Datum chessgame_gte(PG_FUNCTION_ARGS)
@@ -587,9 +593,10 @@ Datum chessgame_gte(PG_FUNCTION_ARGS)
     char *SAN1 = getChessgameSanMoves(game1);
     chessgame *game2 = (chessgame *)PG_GETARG_POINTER(1);
     char *SAN2 = getChessgameSanMoves(game2);
+    bool result = lessThan(game2, game1) || strcmp(SAN1, SAN2) == 0;
     PG_FREE_IF_COPY(game1, 0);
     PG_FREE_IF_COPY(game2, 1);
-    PG_RETURN_BOOL(lessThan(game2, game1) || strcmp(SAN1, SAN2) == 0);
+    PG_RETURN_BOOL(result);
 }
 
 Datum chessgame_cmp(PG_FUNCTION_ARGS)
@@ -660,6 +667,6 @@ Datum chessgame_get_all_states(PG_FUNCTION_ARGS)
         pfree(DatumGetPointer(fenStates[i]));
     }
     pfree(fenStates);
-
+    PG_FREE_IF_COPY(game, 0);
     PG_RETURN_ARRAYTYPE_P(resultArray);
 }

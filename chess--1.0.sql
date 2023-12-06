@@ -151,11 +151,11 @@ CREATE FUNCTION chessgame_send(chessgame) RETURNS bytea
  ******************************************************************************/
 
 CREATE TYPE chessgame (
+  internallength = -1,
   input          = chessgame_in,
   output         = chessgame_out,
   receive        = chessgame_recv,
-  send           = chessgame_send,
-  internallength = -1
+  send           = chessgame_send
 );
 
 
