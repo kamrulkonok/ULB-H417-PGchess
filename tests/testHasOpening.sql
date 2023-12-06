@@ -30,3 +30,6 @@ EXPLAIN SELECT * FROM chessgames WHERE hasOpening(game, '1.e4 c5 2.Nf3');
 SELECT * FROM chessgames WHERE hasOpening(game, '1.e4 c5 2.Nf3');
 
 SELECT * FROM chessgames WHERE hasOpening(game, '1.e4 c5 2.Nf3 d6');
+
+SELECT * FROM chessgames
+WHERE hasOpening(game, (SELECT getFirstMoves(game, 3) FROM chessgames WHERE id = 2));

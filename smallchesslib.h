@@ -524,7 +524,7 @@ static inline uint8_t SCL_coordsToSquare(uint8_t row, uint8_t column);
   Every record should be ended by an ending move (ab != 00), empty record should
   have one move where xxxxxx == yyyyyy == 0 and ab == 11.
 */
-typedef int SCL_Record[SCL_RECORD_MAX_SIZE];
+typedef uint8_t SCL_Record[SCL_RECORD_MAX_SIZE];
 
 #define SCL_RECORD_CONT 0x00
 #define SCL_RECORD_W_WIN 0x40
@@ -693,8 +693,21 @@ void SCL_printBoardSimple(
     uint8_t format);
 
 void SCL_printSquareUTF8(uint8_t square, SCL_PutCharFunction putCharFunc);
-void SCL_printPGN(SCL_Record r, SCL_PutCharFunction putCharFunc,
-                  SCL_Board initialState);
+
+typedef struct
+{
+  char *buffer;
+  size_t capacity;
+  size_t length;
+} SCL_StringBuilder;
+
+SCL_StringBuilder *SCL_createStringBuilder();
+char *SCL_finalizeStringBuilder(SCL_StringBuilder *sb);
+void SCL_appendChar(SCL_StringBuilder *sb, char c);
+
+char *appendCharToBuffer(char c, char *buffer, size_t *bufferIndex, size_t *bufferSize);
+char *SCL_printPGN(SCL_Record r);
+
 /**
   Reads a move from string (the notation format is described at the top of this
   file). The function is safe as long as the string is 0 terminated. Returns 1
@@ -3560,21 +3573,16 @@ uint8_t SCL_boardMoveResetsCount(SCL_Board board,
          board[squareTo] != '.';
 }
 
-void SCL_printPGN(SCL_Record r, SCL_PutCharFunction putCharFunc,
-                  SCL_Board initialState)
+char *SCL_printPGN(SCL_Record r)
 {
   if (SCL_recordLength(r) == 0)
-    return;
+    return NULL;
+
+  SCL_StringBuilder *sb = SCL_createStringBuilder();
 
   uint16_t pos = 0;
-
   SCL_Board board;
-
-  if (initialState != 0)
-    for (uint8_t i = 0; i < SCL_BOARD_STATE_SIZE; ++i)
-      board[i] = initialState[i];
-  else
-    SCL_boardInit(board);
+  SCL_boardInit(board);
 
   while (1)
   {
@@ -3590,15 +3598,15 @@ void SCL_printPGN(SCL_Record r, SCL_PutCharFunction putCharFunc,
       uint8_t move = pos / 2 + 1;
 
       if (move / 100 != 0)
-        putCharFunc('0' + move / 100);
+        SCL_appendChar(sb, '0' + move / 100);
 
       if (move / 10 != 0 || move / 100 != 0)
-        putCharFunc('0' + (move % 100) / 10);
+        SCL_appendChar(sb, '0' + (move % 100) / 10);
 
-      putCharFunc('0' + move % 10);
+      SCL_appendChar(sb, '0' + move % 10);
 
-      putCharFunc('.');
-      putCharFunc(' ');
+      SCL_appendChar(sb, '.');
+      SCL_appendChar(sb, ' ');
     }
 
 #if !SCL_960_CASTLING
@@ -3609,9 +3617,9 @@ void SCL_printPGN(SCL_Record r, SCL_PutCharFunction putCharFunc,
         (board[s0] == 'k' && board[s1] == 'r'))
 #endif
     {
-      putCharFunc('O');
-      putCharFunc('-');
-      putCharFunc('O');
+      SCL_appendChar(sb, 'O');
+      SCL_appendChar(sb, '-');
+      SCL_appendChar(sb, 'O');
 
 #if !SCL_960_CASTLING
       if (s1 == 58 || s1 == 2)
@@ -3620,8 +3628,8 @@ void SCL_printPGN(SCL_Record r, SCL_PutCharFunction putCharFunc,
           (s1 == 56 + (board[SCL_BOARD_EXTRA_BYTE] & 0x07)))
 #endif
       {
-        putCharFunc('-');
-        putCharFunc('O');
+        SCL_appendChar(sb, '-');
+        SCL_appendChar(sb, 'O');
       }
     }
     else
@@ -3630,7 +3638,7 @@ void SCL_printPGN(SCL_Record r, SCL_PutCharFunction putCharFunc,
 
       if (!pawn)
       {
-        putCharFunc(SCL_pieceToColor(board[s0], 1));
+        SCL_appendChar(sb, SCL_pieceToColor(board[s0], 1));
 
         // disambiguation:
 
@@ -3650,28 +3658,28 @@ void SCL_printPGN(SCL_Record r, SCL_PutCharFunction putCharFunc,
           }
 
         if (specify & 0x01)
-          putCharFunc('a' + s0 % 8);
+          SCL_appendChar(sb, 'a' + s0 % 8);
 
         if (specify & 0x02)
-          putCharFunc('1' + s0 / 8);
+          SCL_appendChar(sb, '1' + s0 / 8);
       }
 
       if (board[s1] != '.' ||
           (pawn && s0 % 8 != s1 % 8 && board[s1] == '.')) // capture?
       {
         if (pawn)
-          putCharFunc('a' + s0 % 8);
+          SCL_appendChar(sb, 'a' + s0 % 8);
 
-        putCharFunc('x');
+        SCL_appendChar(sb, 'x');
       }
 
-      putCharFunc('a' + s1 % 8);
-      putCharFunc('1' + s1 / 8);
+      SCL_appendChar(sb, 'a' + s1 % 8);
+      SCL_appendChar(sb, '1' + s1 / 8);
 
       if (pawn && (s1 >= 56 || s1 <= 7)) // promotion?
       {
-        putCharFunc('=');
-        putCharFunc(SCL_pieceToColor(p, 1));
+        SCL_appendChar(sb, '=');
+        SCL_appendChar(sb, SCL_pieceToColor(p, 1));
       }
     }
 
@@ -3680,21 +3688,22 @@ void SCL_printPGN(SCL_Record r, SCL_PutCharFunction putCharFunc,
     uint8_t position = SCL_boardGetPosition(board);
 
     if (position == SCL_POSITION_CHECK)
-      putCharFunc('+');
+      SCL_appendChar(sb, '+');
 
     if (position == SCL_POSITION_MATE)
     {
-      putCharFunc('#');
+      SCL_appendChar(sb, '#');
       break;
     }
     else if (state != SCL_RECORD_CONT)
     {
-      putCharFunc('*');
       break;
     }
 
-    putCharFunc(' ');
+    SCL_appendChar(sb, ' ');
   }
+  char *result = SCL_finalizeStringBuilder(sb);
+  return result;
 }
 
 void SCL_recordCopy(SCL_Record recordFrom, SCL_Record recordTo)
