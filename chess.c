@@ -34,6 +34,7 @@ PG_FUNCTION_INFO_V1(chessboard_lte);
 PG_FUNCTION_INFO_V1(chessboard_gt);
 PG_FUNCTION_INFO_V1(chessboard_gte);
 PG_FUNCTION_INFO_V1(chessboard_to_text);
+PG_FUNCTION_INFO_V1(text_to_chessboard);
 
 chessboard *create_chessboard_from_fen(const char *fenStr)
 {
@@ -132,6 +133,21 @@ Datum chessboard_to_text(PG_FUNCTION_ARGS)
     PG_RETURN_TEXT_P(result);
 }
 
+Datum text_to_chessboard(PG_FUNCTION_ARGS)
+{
+    if (PG_ARGISNULL(0))
+        ereport(ERROR,
+                (errcode(ERRCODE_NULL_VALUE_NOT_ALLOWED),
+                 errmsg("input string must not be null")));
+
+    text *inputText = PG_GETARG_TEXT_PP(0);
+    char *fenStr = text_to_cstring(inputText);
+    chessboard *board = create_chessboard_from_fen(fenStr);
+
+    PG_FREE_IF_COPY(inputText, 0);
+    PG_RETURN_POINTER(board);
+}
+
 /************************************************************************************************************
                                           Chessgame structure
 ************************************************************************************************************/
@@ -150,7 +166,7 @@ SCL_StringBuilder *SCL_createStringBuilder()
 
     if (!sb->buffer)
     {
-        free(sb);
+        pfree(sb);
         return NULL;
     }
 
@@ -183,6 +199,27 @@ char *SCL_finalizeStringBuilder(SCL_StringBuilder *sb)
     char *finalString = repalloc(sb->buffer, sb->length + 1); // Resize to actual size
     pfree(sb);
     return finalString;
+}
+
+// Helper function to trim the result from a SAN moves string
+char *trim_san_moves(const char *sanMovesStr)
+{
+    // Copy the original string to avoid modifying it directly
+    char *trimmedStr = pstrdup(sanMovesStr);
+    // Define tokens that indicate the end of the moves and start of the result
+    const char *endTokens[] = {" 1-0", " 0-1", " 1/2-1/2", NULL};
+    for (int i = 0; endTokens[i] != NULL; i++)
+    {
+        // Finds the first occurrence of s2 in s1
+        char *found = strstr(trimmedStr, endTokens[i]);
+        if (found != NULL)
+        {
+            // Truncate the string at the start of the result
+            *found = '\0';
+            break;
+        }
+    }
+    return trimmedStr;
 }
 
 typedef struct
@@ -238,10 +275,11 @@ PG_FUNCTION_INFO_V1(chessgame_get_all_states);
 
 chessgame *create_chessgame(const char *SAN)
 {
+    char *trimmedSAN = trim_san_moves(SAN);
     // Create an empty SCL Record
     SCL_Record r;
     // Populate it with all of the SAN moves
-    SCL_recordFromPGN(r, SAN);
+    SCL_recordFromPGN(r, trimmedSAN);
     // Calculate the number of half moves
     uint16_t numHalfMoves = SCL_recordLength(r);
     // Each half move is encoded as a pair of numbers
@@ -571,6 +609,7 @@ Datum chessgame_get_all_states(PG_FUNCTION_ARGS)
     for (int i = 0; i <= numHalfMoves; ++i)
     {
         char *fen = getChessgameBoard(game, i);
+
         if (fen != NULL)
         {
             // prepend move number to FEN state like this "i:FEN"
@@ -594,10 +633,10 @@ Datum chessgame_get_all_states(PG_FUNCTION_ARGS)
     bool elemTypbyval;
     char elemTypalign;
     get_typlenbyvalalign(TEXTOID, &elemTyplen, &elemTypbyval, &elemTypalign);
-    ArrayType *resultArray = construct_array(fenStates, numHalfMoves, TEXTOID, elemTyplen, elemTypbyval, elemTypalign);
+    ArrayType *resultArray = construct_array(fenStates, numHalfMoves + 1, TEXTOID, elemTyplen, elemTypbyval, elemTypalign);
 
     // Clean up
-    for (int i = 0; i < numHalfMoves; ++i)
+    for (int i = 0; i <= numHalfMoves; ++i)
     {
         pfree(DatumGetPointer(fenStates[i]));
     }
