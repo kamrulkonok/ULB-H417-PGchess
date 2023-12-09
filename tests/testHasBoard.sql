@@ -4,12 +4,13 @@ CREATE EXTENSION chess;
 DROP TABLE IF EXISTS chessgames CASCADE;
 CREATE TABLE chessgames (
     id serial PRIMARY KEY,
-    game chessgame,
-    fenStates TEXT[]
+    game chessgame
 );
 
 COPY chessgames(game) FROM '/mnt/e/Documents/BDMA/ULB/DBSA/project/ULB-H417-PGchess/data/pgndemo.csv' DELIMITER ',' CSV;
-UPDATE chessgames SET fenStates = getAllStates(game);
+COPY chessgames(game) FROM '/mnt/e/Documents/BDMA/ULB/DBSA/project/ULB-H417-PGchess/data/pgndemo.csv' DELIMITER ',' CSV;
+COPY chessgames(game) FROM '/mnt/e/Documents/BDMA/ULB/DBSA/project/ULB-H417-PGchess/data/pgndemo.csv' DELIMITER ',' CSV;
+
 CREATE INDEX hasBoard_idx ON chessgames USING GIN(getAllStates(game));
 VACUUM ANALYZE chessgames;
 
