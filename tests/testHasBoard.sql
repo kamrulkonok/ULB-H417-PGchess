@@ -10,7 +10,7 @@ CREATE TABLE chessgames (
 
 COPY chessgames(game) FROM '/mnt/e/Documents/BDMA/ULB/DBSA/project/ULB-H417-PGchess/data/pgndemo.csv' DELIMITER ',' CSV;
 UPDATE chessgames SET fenStates = getAllStates(game);
-CREATE INDEX fen_idx ON chessgames USING GIN(getAllStates(game));
+CREATE INDEX hasBoard_idx ON chessgames USING GIN(getAllStates(game));
 VACUUM ANALYZE chessgames;
 
 EXPLAIN ANALYZE SELECT COUNT(*) FROM chessgames

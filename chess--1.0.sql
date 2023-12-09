@@ -272,8 +272,8 @@ CREATE OPERATOR CLASS chessgame_ops
 
 CREATE OR REPLACE FUNCTION hasOpening(game1 chessgame, game2 chessgame)
 RETURNS boolean AS $$
-  SELECT game2 <= game1;
-$$ LANGUAGE sql IMMUTABLE STRICT PARALLEL SAFE;
+  SELECT game1::text LIKE game2::text || '%';
+$$ LANGUAGE sql IMMUTABLE PARALLEL SAFE;
 
 -- Function to display the Array of chessgame states using `chessgame_get_all_states` as text[]
 CREATE FUNCTION getAllStates(chessgame)

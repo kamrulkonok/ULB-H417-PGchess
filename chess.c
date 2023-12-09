@@ -498,13 +498,11 @@ bool prefix(const char *pre, const char *str)
     return strncmp(pre, str, strlen(pre)) == 0;
 }
 
-bool lessThan(chessgame *game1, chessgame *game2)
+bool lessThan(const char *SAN1, const char *SAN2)
 {
     /*
-     * game1 is 'less than' game2 if game1 is a prefix of game2
+     * game1 is 'less than' game2 if SAN of game1 is a prefix of SAN of game2
      */
-    const char *SAN1 = getChessgameSanMoves(game1);
-    const char *SAN2 = getChessgameSanMoves(game2);
     return prefix(SAN1, SAN2);
 }
 
@@ -512,7 +510,11 @@ Datum chessgame_lt(PG_FUNCTION_ARGS)
 {
     chessgame *game1 = (chessgame *)PG_GETARG_POINTER(0);
     chessgame *game2 = (chessgame *)PG_GETARG_POINTER(1);
-    bool result = lessThan(game1, game2);
+    const char *SAN1 = getChessgameSanMoves(game1);
+    const char *SAN2 = getChessgameSanMoves(game2);
+    bool result = lessThan(SAN1, SAN2);
+    pfree(SAN1);
+    pfree(SAN2);
     PG_FREE_IF_COPY(game1, 0);
     PG_FREE_IF_COPY(game2, 1);
     PG_RETURN_BOOL(result);
@@ -521,10 +523,12 @@ Datum chessgame_lt(PG_FUNCTION_ARGS)
 Datum chessgame_lte(PG_FUNCTION_ARGS)
 {
     chessgame *game1 = (chessgame *)PG_GETARG_POINTER(0);
-    char *SAN1 = getChessgameSanMoves(game1);
     chessgame *game2 = (chessgame *)PG_GETARG_POINTER(1);
-    char *SAN2 = getChessgameSanMoves(game2);
-    bool result = lessThan(game1, game2) || strcmp(SAN1, SAN2) == 0;
+    const char *SAN1 = getChessgameSanMoves(game1);
+    const char *SAN2 = getChessgameSanMoves(game2);
+    bool result = lessThan(SAN1, SAN2) || strcmp(SAN1, SAN2) == 0;
+    pfree(SAN1);
+    pfree(SAN2);
     PG_FREE_IF_COPY(game1, 0);
     PG_FREE_IF_COPY(game2, 1);
     PG_RETURN_BOOL(result);
@@ -534,7 +538,11 @@ Datum chessgame_eq(PG_FUNCTION_ARGS)
 {
     chessgame *game1 = (chessgame *)PG_GETARG_POINTER(0);
     chessgame *game2 = (chessgame *)PG_GETARG_POINTER(1);
-    bool result = strcmp(getChessgameSanMoves(game1), getChessgameSanMoves(game2)) == 0;
+    const char *SAN1 = getChessgameSanMoves(game1);
+    const char *SAN2 = getChessgameSanMoves(game2);
+    bool result = strcmp(SAN1, SAN2) == 0;
+    pfree(SAN1);
+    pfree(SAN2);
     PG_FREE_IF_COPY(game1, 0);
     PG_FREE_IF_COPY(game2, 1);
     PG_RETURN_BOOL(result);
@@ -544,7 +552,11 @@ Datum chessgame_neq(PG_FUNCTION_ARGS)
 {
     chessgame *game1 = (chessgame *)PG_GETARG_POINTER(0);
     chessgame *game2 = (chessgame *)PG_GETARG_POINTER(1);
-    bool result = strcmp(getChessgameSanMoves(game1), getChessgameSanMoves(game2)) != 0;
+    const char *SAN1 = getChessgameSanMoves(game1);
+    const char *SAN2 = getChessgameSanMoves(game2);
+    bool result = strcmp(SAN1, SAN2) != 0;
+    pfree(SAN1);
+    pfree(SAN2);
     PG_FREE_IF_COPY(game1, 0);
     PG_FREE_IF_COPY(game2, 1);
     PG_RETURN_BOOL(result);
@@ -554,7 +566,11 @@ Datum chessgame_gt(PG_FUNCTION_ARGS)
 {
     chessgame *game1 = (chessgame *)PG_GETARG_POINTER(0);
     chessgame *game2 = (chessgame *)PG_GETARG_POINTER(1);
-    bool result = lessThan(game2, game1);
+    const char *SAN1 = getChessgameSanMoves(game1);
+    const char *SAN2 = getChessgameSanMoves(game2);
+    bool result = lessThan(SAN2, SAN1);
+    pfree(SAN1);
+    pfree(SAN2);
     PG_FREE_IF_COPY(game1, 0);
     PG_FREE_IF_COPY(game2, 1);
     PG_RETURN_BOOL(result);
@@ -563,10 +579,12 @@ Datum chessgame_gt(PG_FUNCTION_ARGS)
 Datum chessgame_gte(PG_FUNCTION_ARGS)
 {
     chessgame *game1 = (chessgame *)PG_GETARG_POINTER(0);
-    char *SAN1 = getChessgameSanMoves(game1);
     chessgame *game2 = (chessgame *)PG_GETARG_POINTER(1);
-    char *SAN2 = getChessgameSanMoves(game2);
-    bool result = lessThan(game2, game1) || strcmp(SAN1, SAN2) == 0;
+    const char *SAN1 = getChessgameSanMoves(game1);
+    const char *SAN2 = getChessgameSanMoves(game2);
+    bool result = lessThan(SAN2, SAN1) || strcmp(SAN1, SAN2) == 0;
+    pfree(SAN1);
+    pfree(SAN2);
     PG_FREE_IF_COPY(game1, 0);
     PG_FREE_IF_COPY(game2, 1);
     PG_RETURN_BOOL(result);
@@ -576,16 +594,21 @@ Datum chessgame_cmp(PG_FUNCTION_ARGS)
 {
     chessgame *game1 = (chessgame *)PG_GETARG_POINTER(0);
     chessgame *game2 = (chessgame *)PG_GETARG_POINTER(1);
-    int result = strcmp(getChessgameSanMoves(game1), getChessgameSanMoves(game2));
+    const char *SAN1 = getChessgameSanMoves(game1);
+    const char *SAN2 = getChessgameSanMoves(game2);
+
+    int result = strcmp(SAN1, SAN2);
     if (result != 0)
     {
         // check less than
-        if (lessThan(game1, game2))
+        if (lessThan(SAN1, SAN2))
             result = -1;
         // check greater than
-        else if (lessThan(game2, game1))
+        else if (lessThan(SAN2, SAN1))
             result = 1;
     }
+    pfree(SAN1);
+    pfree(SAN2);
     PG_FREE_IF_COPY(game1, 0);
     PG_FREE_IF_COPY(game2, 1);
     PG_RETURN_INT32(result);
