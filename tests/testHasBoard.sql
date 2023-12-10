@@ -11,7 +11,9 @@ COPY chessgames(game) FROM '/mnt/e/Documents/BDMA/ULB/DBSA/project/ULB-H417-PGch
 COPY chessgames(game) FROM '/mnt/e/Documents/BDMA/ULB/DBSA/project/ULB-H417-PGchess/data/pgndemo.csv' DELIMITER ',' CSV;
 COPY chessgames(game) FROM '/mnt/e/Documents/BDMA/ULB/DBSA/project/ULB-H417-PGchess/data/pgndemo.csv' DELIMITER ',' CSV;
 
+-- create gin index
 CREATE INDEX hasBoard_idx ON chessgames USING GIN(getAllStates(game));
+
 VACUUM ANALYZE chessgames;
 
 EXPLAIN ANALYZE SELECT COUNT(*) FROM chessgames
