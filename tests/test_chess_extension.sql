@@ -319,7 +319,7 @@ SELECT count(*)
 FROM chessgames
 WHERE hasBoard(game, 'rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR w KQkq - 0 1', -1);
 
---- Determining if a boardstate appears within the first 10 half-moves by joining chessgame and chessboard
+--- 6. Determining if a boardstate appears within the first 10 half-moves by joining chessgame and chessboard
 SELECT 
     cg.id AS game_id,
     cb.game_board,
