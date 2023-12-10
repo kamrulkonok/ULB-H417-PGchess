@@ -12,8 +12,8 @@ COPY chessgames(game) FROM '/mnt/e/Documents/BDMA/ULB/DBSA/project/ULB-H417-PGch
 COPY chessgames(game) FROM '/mnt/e/Documents/BDMA/ULB/DBSA/project/ULB-H417-PGchess/data/pgndemo.csv' DELIMITER ',' CSV;
 
 -- create btree index
--- CREATE INDEX hasOpening_idx ON chessgames USING btree (game chessgame_ops);
 CREATE INDEX hasOpening_idx ON chessgames (CAST(game as TEXT) text_pattern_ops);
+-- CREATE INDEX hasOpening_idx ON chessgames USING btree (game chessgame_ops);
 
 VACUUM ANALYZE chessgames;
 
