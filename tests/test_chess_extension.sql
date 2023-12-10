@@ -249,6 +249,32 @@ GROUP BY opening, board_state
 ORDER BY opening, frequency DESC
 LIMIT 5;
 
+                                                            --- hasOpening Function ---
+
+
+-- 1. Check each game to determine if the game starts with '1.e4 e5 2.Nf3 Nc6 3.Bb5' opening, and providing bool result 
+SELECT 
+    id, 
+    hasOpening(game, '1.e4 e5 2.Nf3 Nc6'::chessgame) as is_chess_opening
+FROM chessgames 
+LIMIT 5;
+
+-- 2. How many games started with the given sequence of moves?
+SELECT count(*)
+FROM chessgames
+WHERE hasopening(game, '1.d4 Nf6 2.Nf3 g6');
+
+-- 3. How many games started with the given sequence of moves (Complete match)?
+SELECT count(*)
+FROM chessgames
+WHERE hasopening(game, '1.d4 Nf6 2.Nf3 g6 3.Bg5 Bg7 4.Nbd2 O-O 5.c3 d6 6.e4 c5 7.dxc5 dxc5 8.Be2 Nc6 9.O-O b6 10.Qc2 Bb7 11.Bh4 Nh5 12.Rfd1 Qc7 13.Nc4 Bf6 14.Ne3 e6  1/2-1/2');
+
+-- 4. Which games have the same 10 first half-moves as any of the games stored in table favoriteGames?
+SELECT count(*)
+FROM chessgames g, favoritegames f
+WHERE hasopening(g.game, getFirstMoves(f.game, 10));
+
+
                                                     --- hasBoard Function ---
 
 -- 1. How many games contain the given board state at any time during the game?
@@ -278,47 +304,30 @@ SELECT count(game)
 FROM chessgames
 WHERE hasboard(game, 'rnbqkbnr/pp1ppppp/8/2p5/4P3/8/PPPP1PPP/RNBQKBNR w KQkq c6 0 2', 10);
 
--- 3. How many games have the initial board state in the first twenty half moves?
+-- 3. How many games have the initial board state in the first twenty-half moves?
 SELECT count(*)
 FROM chessgames
 WHERE hasBoard(game, 'rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR w KQkq - 0 1', 20);
 
--- 4. How many games have the initial board state in the first twenty half moves?
+-- 4. How many games have the initial board state in the first twenty-half moves?
 SELECT count(*)
 FROM chessgames
 WHERE hasBoard(game, 'rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR w KQkq - 0 1', 0);
 
--- 5. How many games have the initial board state but with an number of moves?
+-- 5. How many games have the initial board state but with several moves?
 SELECT count(*)
 FROM chessgames
 WHERE hasBoard(game, 'rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR w KQkq - 0 1', -1);
 
-
-
-                                                            --- hasOpening Function ---
-
-
--- 1. Checking each game to determine if the game starts with '1.e4 e5 2.Nf3 Nc6 3.Bb5' opening, and providing bool result 
+--- Determining if a boardstate appears within the first 10 half-moves by joining chessgame and chessboard
 SELECT 
-    id, 
-    hasOpening(game, '1.e4 e5 2.Nf3 Nc6'::chessgame) as is_chess_opening
-FROM chessgames 
-LIMIT 5;
+    cg.id AS game_id,
+    cb.game_board,
+    hasBoard(cg.game, cb.game_board, 10) AS board_in_first_10_half_moves
+FROM chessgames cg 
+JOIN chessboards cb ON cg.id = cb.game_id;
 
--- 2. How many games started with the given sequence of moves?
-SELECT count(*)
-FROM chessgames
-WHERE hasopening(game, '1.d4 Nf6 2.Nf3 g6');
 
--- 3. How many games started with the given sequence of moves (Complete match)?
-SELECT count(*)
-FROM chessgames
-WHERE hasopening(game, '1.d4 Nf6 2.Nf3 g6 3.Bg5 Bg7 4.Nbd2 O-O 5.c3 d6 6.e4 c5 7.dxc5 dxc5 8.Be2 Nc6 9.O-O b6 10.Qc2 Bb7 11.Bh4 Nh5 12.Rfd1 Qc7 13.Nc4 Bf6 14.Ne3 e6  1/2-1/2');
-
--- 4. Which games have the same 10 first half-moves as any of the games stored in table favoriteGames?
-SELECT count(*)
-FROM chessgames g, favoritegames f
-WHERE hasopening(g.game, getFirstMoves(f.game, 10));
 
 
                                             --- B-Tree Index---
@@ -328,6 +337,7 @@ VACUUM ANALYZE chessgames;
 
 -- Test the hasOpening function
 EXPLAIN ANALYZE SELECT * FROM chessgames WHERE hasOpening(game, '1.e4 c5 2.Nf3 Nc6 3.d4 cxd4');
+
 
                                             --- GIN Index---
 
