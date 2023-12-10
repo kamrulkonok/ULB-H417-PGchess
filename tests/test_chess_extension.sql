@@ -4,15 +4,9 @@ CREATE EXTENSION chess;
 
 
                                                     --- Necessary tables for testing ---
+
 DROP TABLE IF EXISTS chessgames;
 CREATE TABLE chessgames (
-    id serial PRIMARY KEY,
-    game chessgame
-);
-
-
-DROP TABLE IF EXISTS game_test;
-CREATE TABLE game_test (
     id serial PRIMARY KEY,
     game chessgame
 );
@@ -34,8 +28,9 @@ CREATE TABLE chessboards (
     game_id serial PRIMARY KEY,
     game_board chessboard
 );
---- Populate the tables
-\COPY game_test(game) FROM '/mnt/c/Users/Konok/Desktop/ULB-H417-PGchess-main/tests/chessgames_data.csv' DELIMITER ',' CSV;
+
+--- Populate the tables (Add file path here)
+\COPY chessgames(game) FROM '/mnt/h/BDMA/DBSA/ULB-H417-PGchess/tests/chessgames_data_10000.csv' DELIMITER ',' CSV;
 
                                                     --- chessboard datatype ---
 
@@ -63,7 +58,6 @@ SELECT getBoard(game, 7) as last_half_move FROM chessgames;
 --- Interesting test cases for getBoard function
 
 -- 1. Retrieves initial chessboard position and positions after 5th and 10th half-moves.
-
 SELECT 
     id, 
     getBoard(game, 0) as initial_position, 
@@ -73,7 +67,6 @@ FROM chessgames
 WHERE id = 15;
 
 -- 2. Displaying the initial position in the table, along with the board states after the first moves by white and black
-
 SELECT 
     id,
     getBoard(game, 0) as initial_position,
@@ -107,6 +100,7 @@ WHERE getBoard(game, 4) = 'rnbqkb1r/pp1ppppp/5n2/2p5/4P3/2P5/PP1P1PPP/RNBQKBNR w
 SELECT COUNT(*) AS matching_games_count
 FROM chessgames
 WHERE getBoard(game, 20) = 'rnbqkb1r/pp1ppppp/5n2/2p5/4P3/2P5/PP1P1PPP/RNBQKBNR w KQkq - 1 3';
+
 -- 8. Evolution of Game Boards in King's Pawn Opening: What are the most common board states at the 10th and 20th moves in games starting with 1.e4 e5?
 SELECT 
     getBoard(game, 10) AS board_state_at_move_10,
@@ -119,7 +113,6 @@ ORDER BY frequency DESC
 LIMIT 5;
 
 -- 9. Most Common Board States for a Given Opening: What are the most common board states after 10 moves for games that start with the King's Pawn opening.
-
 SELECT 
     getBoard(game, 10) AS board_state,
     COUNT(*) AS frequency
@@ -162,7 +155,6 @@ SELECT getFirstMoves(game, 7) as first_7_moves FROM chessgames;
 --- Interesting test cases to check getFirstMoves function 
 
 -- 1. Displaying full chessgame and truncated to first 2 and 3 full moves for each game
-
 SELECT 
     id,
     game as full_game,
@@ -172,7 +164,6 @@ FROM chessgames;
 
 
 -- 2. Displaying common openings by categorizing and counting the number of chess games by their opening sequence 
-
 SELECT 
     getFirstMoves(game, 6) as opening_sequence,
     COUNT(*) as number_of_games
@@ -213,7 +204,6 @@ LEFT JOIN
 ON g.opening_sequence = fg.opening_sequence;
 
 -- 7. Popularity of Certain Openings: How popular are the Italian Game (1.e4 e5) and the Sicilian Defense (1.e4 c5) compared to each other?
-
 SELECT 
     getFirstMoves(game, 2) AS opening,
     COUNT(*) AS frequency
@@ -222,7 +212,6 @@ WHERE getFirstMoves(game, 2) IN ('1.e4 e5 '::chessgame, '1.e4 c5 '::chessgame)
 GROUP BY opening;
 
 -- 8. Most Common Responses to a Specific Opening: What are the most common responses to the opening move '1.e4'?
-
 SELECT 
     getFirstMoves(game, 2) AS opening_response,
     COUNT(*) AS frequency
@@ -230,6 +219,7 @@ FROM chessgames
 WHERE getFirstMoves(game, 1) = '1.e4 '::chessgame
 GROUP BY opening_response
 ORDER BY frequency DESC;
+
 --  9. Evolution of an Opening: How do the games evolve after the first three moves of the Queen's Gambit (1.d4 d5 2.c4)?
 SELECT 
     getFirstMoves(game, 6) AS first_six_half_moves,
@@ -238,6 +228,7 @@ FROM chessgames
 WHERE getFirstMoves(game, 3) = '1.d4 d5 2.c4 '::chessgame
 GROUP BY first_six_half_moves
 ORDER BY frequency DESC;
+
 -- 10. Most Common Board States for Specific Openings: What are the most common board states after 8 moves between the Queen’s Gambit and the Sicilian Defense?
 SELECT 
     getFirstMoves(game, 2) AS opening,

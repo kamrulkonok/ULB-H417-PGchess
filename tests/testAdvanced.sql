@@ -4,7 +4,7 @@ CREATE TABLE game_test (
     game chessgame
 );
 
-COPY game_test(game) FROM '/mnt/e/Documents/BDMA/ULB/DBSA/project/ULB-H417-PGchess/data/pgndemo.csv' DELIMITER ',' CSV;
+\COPY game_test(game) FROM '/mnt/h/BDMA/DBSA/ULB-H417-PGchess/tests/chessgames_data_10000.csv' DELIMITER ',' CSV;
 
 -- Popularity of Certain Openings: How popular are the Italian Game (1.e4 e5) and the Sicilian Defense (1.e4 c5) compared to each other?
 SELECT 
