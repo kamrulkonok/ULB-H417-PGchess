@@ -19,9 +19,7 @@ Typically, a control file includes:
 
 - Extension Name: The name of the extension.
 - Default Version: The current version of the extension.
-- Comment: A brief description of what the extension does.
 - Schema: Optional. Specifies the default schema for the objects created by the extension.
-- Dependencies: Optional. Lists other extensions that this extension depends on.
 - Module Pathname: The name of the shared library (without the platform-specific prefix and suffix) for the extension.
 - Requisite Files: The SQL script files needed to install the extension (and optionally to update it from previous versions).
 
